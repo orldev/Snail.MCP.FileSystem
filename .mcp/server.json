@@ -1,0 +1,63 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
+  "name": "io.github.orldev/snail-mcp-filesystem",
+  "description": "Local MCP server for files: reading, writing, an exact replacement, listings and search — only inside the working copy the session names. find_tool says which tool answers a task, run_tools runs several in one call.",
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "nuget",
+      "identifier": "Snail.MCP.FileSystem",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [],
+      "environmentVariables": [
+        {
+          "name": "SNAIL_MCP_FILESYSTEM_ROOTS__0",
+          "description": "Absolute path the agent may work in when the session names no root of its own; add ROOTS__1 and so on for more. Nothing outside them is reachable.",
+          "isRequired": true
+        },
+        {
+          "name": "SNAIL_MCP_FILESYSTEM_PORT",
+          "description": "Port to answer sessions on, each naming its own working copy at /mcp?root=…; unset means the server is started as a program and speaks stdio to its parent.",
+          "isRequired": false
+        },
+        {
+          "name": "SNAIL_MCP_FILESYSTEM_ALLOW_WRITE",
+          "description": "Whether write_file and edit_file do anything; a role that only reads is given a server that only reads.",
+          "isRequired": false,
+          "default": "true"
+        },
+        {
+          "name": "SNAIL_MCP_FILESYSTEM_OUTPUT_LIMIT_CHARS",
+          "description": "Characters of file text one call may return before it is cut; the answer says when it was.",
+          "isRequired": false,
+          "default": "131072"
+        },
+        {
+          "name": "SNAIL_MCP_FILESYSTEM_MAX_FILE_BYTES",
+          "description": "Bytes past which a file is not read as text at all.",
+          "isRequired": false,
+          "default": "8388608"
+        },
+        {
+          "name": "SNAIL_MCP_FILESYSTEM_MAX_MATCHES",
+          "description": "Matches one search or listing may return.",
+          "isRequired": false,
+          "default": "200"
+        },
+        {
+          "name": "SNAIL_MCP_FILESYSTEM_STEP_LIMIT",
+          "description": "Steps one run_tools call may take.",
+          "isRequired": false,
+          "default": "20"
+        }
+      ]
+    }
+  ],
+  "repository": {
+    "url": "https://github.com/orldev/Snail.MCP.FileSystem",
+    "source": "github"
+  }
+}
