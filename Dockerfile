@@ -7,16 +7,24 @@
 # working copies of the machine are mounted here, and each session names the one it works in through
 # its address — …/mcp?root=/workspaces/<task>. A session naming a copy this container cannot see is
 # refused at the door rather than answered about the wrong folder.
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+#
+# The SDK is pinned to the band global.json asks for: on the floating sdk:10.0 a newer feature band would one day
+# refuse the build. The server is native: published for linux-x64 the SDK compiles it ahead of time (Native AOT), which
+# needs clang and zlib in the build stage, and the image runs the one executable on runtime-deps, with no .NET runtime
+# in it — a smaller image and a faster start.
+FROM mcr.microsoft.com/dotnet/sdk:10.0.302 AS build
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends clang zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /source
 COPY . .
-RUN dotnet publish src/Snail.MCP.FileSystem.csproj -c Release -o /app -p:PublishAot=false
+RUN dotnet publish src/Snail.MCP.FileSystem.csproj -c Release -r linux-x64 -o /app
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0
+FROM mcr.microsoft.com/dotnet/runtime-deps:10.0
 WORKDIR /app
 COPY --from=build /app .
 
 ENV SNAIL_MCP_FILESYSTEM_PORT=8820
 EXPOSE 8820
 
-ENTRYPOINT ["dotnet", "Snail.MCP.FileSystem.dll"]
+ENTRYPOINT ["/app/Snail.MCP.FileSystem"]

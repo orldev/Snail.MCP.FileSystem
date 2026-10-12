@@ -15,5 +15,5 @@ jobs:
   ci:
     uses: orldev/Snail.Sdk/.github/workflows/mcp-ci.yml@v1
     with:
-      name: Snail.MCP.FileSystem
       contract-variable: SNAIL_FILESYSTEM_SERVER
+      contract-filter: FullyQualifiedName~StdioContract

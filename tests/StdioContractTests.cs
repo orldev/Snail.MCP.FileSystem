@@ -44,7 +44,7 @@ public sealed class StdioContractTests : IDisposable
         {
             var answer = await client.CallToolAsync(tool, arguments);
 
-            Assert.True(answer.IsError is not true, $"{tool}: {ServerProgram.Text(answer)}");
+            Assert.True(answer.IsError is not true, $"{tool}: {answer.Text()}");
         }
 
         Assert.Equal("исправлено", File.ReadAllText(Path.Combine(_root, "new.txt")));
