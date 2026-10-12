@@ -8,6 +8,7 @@ namespace Snail.MCP.FileSystem.Tools;
 [McpServerToolType]
 public sealed class DiscoveryTools(ToolIndex index)
 {
+    /// <summary>The tools that answer a task described in words.</summary>
     [McpServerTool(Name = "find_tool", ReadOnly = true, OpenWorld = false)]
     [Description(ToolDescriptions.FindTool)]
     public JsonObject FindTool(

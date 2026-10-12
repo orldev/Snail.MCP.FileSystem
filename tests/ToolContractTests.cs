@@ -6,7 +6,7 @@ using Snail.MCP.FileSystem.Tools;
 
 namespace Snail.MCP.FileSystem.Tests;
 
-/// <summary>Что этот сервер обещает наружу: имена, описания и цена, которую они стоят каждому сеансу.</summary>
+/// <summary>What this server promises outside: names, descriptions and the price they cost every session.</summary>
 public sealed class ToolContractTests
 {
     private static readonly MethodInfo[] Tools =
@@ -17,7 +17,7 @@ public sealed class ToolContractTests
             .Where(method => method.GetCustomAttribute<McpServerToolAttribute>() is not null)
     ];
 
-    /// <summary>Указатель называет классы инструментов поимённо, ради нативной сборки; класс, которого там нет, пропал бы из find_tool.</summary>
+    /// <summary>The index names the tool classes one by one, for the native build; a class missing there would vanish from find_tool.</summary>
     [Fact]
     public void The_index_holds_every_tool_there_is() =>
         Assert.Equal(
@@ -33,17 +33,17 @@ public sealed class ToolContractTests
         Assert.All(Tools, tool =>
             Assert.False(string.IsNullOrWhiteSpace(tool.GetCustomAttribute<DescriptionAttribute>()?.Description), tool.Name));
 
-    /// <summary>Параметр, смысла которого модель не видит, она заполняет догадкой.</summary>
+    /// <summary>A parameter whose meaning the model cannot see is filled with a guess.</summary>
     [Fact]
     public void Every_parameter_the_model_fills_is_described() =>
         Assert.All(
-            Tools.SelectMany(tool => tool.GetParameters()).Where(Asked),
+            Tools.SelectMany(tool => tool.GetParameters()).Where(IsAsked),
             parameter => Assert.False(
                 string.IsNullOrWhiteSpace(parameter.GetCustomAttribute<DescriptionAttribute>()?.Description),
                 parameter.Name));
 
-    /// <summary>Токен отмены и сам запрос подставляет SDK: в схеме их нет, и описывать их некому.</summary>
-    private static bool Asked(ParameterInfo parameter) =>
+    /// <summary>The cancellation token and the request itself are filled by the SDK: they are not in the schema, and nobody needs them described.</summary>
+    private static bool IsAsked(ParameterInfo parameter) =>
         parameter.ParameterType != typeof(CancellationToken)
         && parameter.ParameterType != typeof(RequestContext<CallToolRequestParams>);
 
@@ -64,8 +64,8 @@ public sealed class ToolContractTests
     }
 
     /// <summary>
-    /// Описания — постоянная плата: клиент везёт их в каждом обращении, пользуется он инструментом или
-    /// нет. Потолок стоит здесь, чтобы добавленное предложение было решением, а не случайностью.
+    /// Descriptions are a standing price: a client carries them in every request, whether it uses the tool or not. The
+    /// ceiling stands here so that an added sentence is a decision rather than an accident.
     /// </summary>
     [Fact]
     public void The_standing_charge_of_the_descriptions_stays_under_its_ceiling()
@@ -82,12 +82,12 @@ public sealed class ToolContractTests
             + "raise the ceiling deliberately and say what the caller gets for the context it costs.");
     }
 
-    /// <summary>Общая для всего флота механика зовётся одинаково у всех трёх серверов.</summary>
+    /// <summary>The mechanics shared by the whole fleet are named alike by all three servers.</summary>
     /// <remarks>
-    /// find_tool, run_tools и run_program — это не про файлы, а про то, как у ЛЮБОГО сервера спрашивают,
-    /// что он умеет, и как тратят несколько его инструментов за один вызов. Платформа зовёт их как
-    /// «сервер.имя», и разнобой означал бы, что один и тот же вопрос задают трём серверам тремя способами.
-    /// Проверяется здесь, потому что имя инструмента — часть договора наружу, а не деталь.
+    /// find_tool, run_tools and run_program are not about files but about how ANY server is asked what it can do, and how
+    /// several of its tools are spent in one call. The platform calls them as "server.name", and a mismatch would mean the
+    /// same question asked of three servers in three ways. Checked here, because the name of a tool is part of the
+    /// contract outside, not a detail.
     /// </remarks>
     [Fact]
     public void The_machinery_of_the_fleet_is_spelled_the_same_way_everywhere()

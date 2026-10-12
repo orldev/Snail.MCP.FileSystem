@@ -13,6 +13,7 @@ public static class ToolResponse
 {
     private static readonly JsonSerializerOptions Wire = new() { WriteIndented = false };
 
+    /// <summary>The answer as the one JSON text block every call returns.</summary>
     public static CallToolResult From(Answer answer) =>
         new()
         {
@@ -32,5 +33,6 @@ public static class ToolResponse
             ]
         };
 
+    /// <summary>Data as a successful answer.</summary>
     public static CallToolResult Success(JsonNode data) => From(Answer.Ok(data));
 }

@@ -1,0 +1,10 @@
+{
+  "intro": [
+    "A local MCP server that lets an AI agent read, write and search the files of the working copy its session names, and nothing outside it. `read_file`, `list_directory`, `find_files` and `search_text` read; `write_file` and `edit_file` change; `find_tool` says which of them answers a task described in words, and `run_tools` runs several of them in one call. There is no tool that deletes, moves or runs anything."
+  ],
+  "families": [
+    { "type": "FileTools", "slug": "files", "title": "Files of the working copy" },
+    { "type": "DiscoveryTools", "slug": "discovery", "title": "Finding a tool" },
+    { "type": "SequenceTools", "slug": "sequence", "title": "Several tools in one call" }
+  ]
+}

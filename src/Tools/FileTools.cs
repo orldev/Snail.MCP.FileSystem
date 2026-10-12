@@ -10,6 +10,7 @@ namespace Snail.MCP.FileSystem.Tools;
 [McpServerToolType]
 public sealed class FileTools(Files files)
 {
+    /// <summary>The text of a file, whole or by lines.</summary>
     [McpServerTool(Name = "read_file", ReadOnly = true, OpenWorld = false)]
     [Description(ToolDescriptions.Read)]
     public CallToolResult Read(
@@ -18,6 +19,7 @@ public sealed class FileTools(Files files)
         [Description(ToolDescriptions.ReadTo)] int? to = null) =>
         ToolResponse.From(files.Read(path, from, to));
 
+    /// <summary>A file written whole.</summary>
     [McpServerTool(Name = "write_file", Destructive = true, OpenWorld = false)]
     [Description(ToolDescriptions.Write)]
     public CallToolResult Write(
@@ -25,6 +27,7 @@ public sealed class FileTools(Files files)
         [Description(ToolDescriptions.WriteText)] string text) =>
         ToolResponse.From(files.Write(path, text));
 
+    /// <summary>An exact piece of a file replaced.</summary>
     [McpServerTool(Name = "edit_file", Destructive = true, OpenWorld = false)]
     [Description(ToolDescriptions.Edit)]
     public CallToolResult Edit(
@@ -34,6 +37,7 @@ public sealed class FileTools(Files files)
         [Description(ToolDescriptions.EditAll)] bool all = false) =>
         ToolResponse.From(files.Edit(path, find, replace, all));
 
+    /// <summary>What lies under a folder.</summary>
     [McpServerTool(Name = "list_directory", ReadOnly = true, OpenWorld = false)]
     [Description(ToolDescriptions.List)]
     public CallToolResult List(
@@ -41,6 +45,7 @@ public sealed class FileTools(Files files)
         [Description(ToolDescriptions.ListDepth)] int depth = 2) =>
         ToolResponse.From(files.List(path, depth));
 
+    /// <summary>The files whose path matches a glob.</summary>
     [McpServerTool(Name = "find_files", ReadOnly = true, OpenWorld = false)]
     [Description(ToolDescriptions.Find)]
     public CallToolResult Find(
@@ -48,6 +53,7 @@ public sealed class FileTools(Files files)
         [Description(ToolDescriptions.ListPath)] string? path = null) =>
         ToolResponse.From(files.Find(pattern, path));
 
+    /// <summary>The lines that contain a text.</summary>
     [McpServerTool(Name = "search_text", ReadOnly = true, OpenWorld = false)]
     [Description(ToolDescriptions.Search)]
     public CallToolResult Search(

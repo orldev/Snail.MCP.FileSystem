@@ -2,7 +2,7 @@ using Snail.MCP.FileSystem.Tools;
 
 namespace Snail.MCP.FileSystem.Tests;
 
-/// <summary>Указатель по инструментам: слова для поиска живут в нём, а не в описаниях каждого сеанса.</summary>
+/// <summary>The index of tools: the words to search by live in it, not in the descriptions every session carries.</summary>
 public sealed class ToolIndexTests
 {
     private readonly ToolIndex _index = new();
@@ -41,7 +41,7 @@ public sealed class ToolIndexTests
         Assert.All(ToolIndex.All, entry => Assert.Contains(entry.Name, known));
     }
 
-    /// <summary>Параметры, которые подставляет SDK, модель не заполняет и в указателе их быть не должно.</summary>
+    /// <summary>The parameters the SDK fills are not the model's to fill, and the index must not show them.</summary>
     [Fact]
     public void The_index_lists_only_the_parameters_the_model_fills()
     {

@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Hosting;
 using Snail.MCP.FileSystem.Configuration;
 
-using Snail.Toolkit.Mcp.Hosting;
+using Snail.Sdk.Mcp.Hosting;
 
 namespace Snail.MCP.FileSystem.Extensions;
 

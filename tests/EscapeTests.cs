@@ -3,8 +3,8 @@ using Snail.MCP.FileSystem.Tests.Support;
 namespace Snail.MCP.FileSystem.Tests;
 
 /// <summary>
-/// Граница между агентом и всеми файлами машины. Это единственное, что у сервера файлов вообще есть:
-/// один вызов отделяет его от всего, что может прочитать процесс.
+/// The border between the agent and every file of the machine. It is the only thing a file server has at all:
+/// one call separates it from everything the process can read.
 /// </summary>
 public sealed class EscapeTests
 {
@@ -23,7 +23,7 @@ public sealed class EscapeTests
         Assert.Contains("outside this session", answer.Error!, StringComparison.Ordinal);
     }
 
-    /// <summary>Сосед, чьё имя лишь начинается так же, — классический способ выйти из клетки.</summary>
+    /// <summary>A neighbour whose name merely starts the same way is the classic way out of the cage.</summary>
     [Fact]
     public void A_sibling_whose_name_merely_begins_the_same_way_is_outside()
     {
@@ -42,7 +42,7 @@ public sealed class EscapeTests
         }
     }
 
-    /// <summary>Симлинк внутри копии — самый дешёвый способ выйти за неё, поэтому ссылки раскрываются.</summary>
+    /// <summary>A symlink inside the copy is the cheapest way out of it, so links are resolved.</summary>
     [Fact]
     public void A_symlink_that_leads_out_of_the_root_does_not_pass_as_a_path_inside_it()
     {
@@ -66,7 +66,7 @@ public sealed class EscapeTests
         }
     }
 
-    /// <summary>Запись наружу — это порча чужой работы, и проверяется она на том же пути, что и чтение.</summary>
+    /// <summary>A write outside spoils somebody else's work, and it is checked on the same path as a read.</summary>
     [Fact]
     public void A_write_outside_the_root_is_refused_before_anything_is_written()
     {
@@ -78,7 +78,7 @@ public sealed class EscapeTests
         Assert.False(File.Exists(elsewhere));
     }
 
-    /// <summary>Сессия без корня не получает ничего: закрыто по умолчанию, а не открыто во всё.</summary>
+    /// <summary>A session without a root gets nothing: closed by default, not open to everything.</summary>
     [Fact]
     public void A_session_given_no_root_reaches_nothing()
     {
@@ -92,9 +92,9 @@ public sealed class EscapeTests
     }
 
     /// <summary>
-    /// Общему серверу настроен весь том рабочих копий — иначе он не смог бы обслужить ни одну. Если
-    /// настроенный корень сложить с корнем сессии, каждая сессия получит файлы всех задач сразу, то есть
-    /// ровно ту изоляцию, ради которой всё и написано. Корень адреса не добавляется к настроенным, а заменяет их.
+    /// A shared server is configured with the whole volume of working copies, or it could serve none of them. Adding
+    /// the configured root to the session's would hand every session the files of every task at once, breaking exactly
+    /// the isolation all of this is written for. The root of the address does not add to the configured ones, it replaces them.
     /// </summary>
     [Fact]
     public void A_session_that_names_its_root_does_not_also_get_the_volume_the_server_was_configured_with()
@@ -110,7 +110,7 @@ public sealed class EscapeTests
         Assert.False(files.Read(Path.Combine(theirs.Root, "secret.txt"), null, null).IsSuccess);
     }
 
-    /// <summary>Корень из адреса — то, ради чего всё: один сервер за несколькими агентами.</summary>
+    /// <summary>The root from the address is what it is all for: one server behind several agents.</summary>
     [Fact]
     public void A_root_named_by_the_address_is_the_one_served()
     {

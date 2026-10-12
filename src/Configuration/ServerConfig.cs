@@ -9,6 +9,7 @@ namespace Snail.MCP.FileSystem.Configuration;
 /// </remarks>
 public sealed class ServerConfig
 {
+    /// <summary>The configuration section the settings are bound from.</summary>
     public const string SectionName = "Snail";
 
     /// <summary>Absolute paths the agent may read and write; nothing outside them is reachable.</summary>

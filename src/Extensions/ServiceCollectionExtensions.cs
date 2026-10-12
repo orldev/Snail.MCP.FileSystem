@@ -6,7 +6,7 @@ using Snail.MCP.FileSystem.Configuration;
 using Snail.MCP.FileSystem.Tools;
 using Snail.MCP.FileSystem.Tools.Prompts;
 
-using Snail.Toolkit.Mcp.Hosting;
+using Snail.Sdk.Mcp.Hosting;
 
 namespace Snail.MCP.FileSystem.Extensions;
 

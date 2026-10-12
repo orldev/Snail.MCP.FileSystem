@@ -31,16 +31,19 @@ public sealed class ToolIndex
     };
 
     /// <summary>The tools that answer a question, best first; every one of them when none does.</summary>
-    public IReadOnlyList<ToolEntry> Find(string? task, int limit) =>
-    [
-        .. All
+    public IReadOnlyList<ToolEntry> Find(string? task, int limit)
+    {
+        var answering = All
             .Select(entry => (Entry: entry, Score: Vocabulary.Score(task ?? string.Empty, entry.Name, Meant(entry.Name), entry.Description)))
-            .Where(scored => scored.Score > 0)
+            .Where(scored => scored.Score > 0);
+
+        var best = answering
             .OrderByDescending(scored => scored.Score)
             .ThenBy(scored => scored.Entry.Name, StringComparer.Ordinal)
-            .Take(Math.Clamp(limit, 1, All.Count))
-            .Select(scored => scored.Entry)
-    ];
+            .Take(Math.Clamp(limit, 1, All.Count));
+
+        return [.. best.Select(scored => scored.Entry)];
+    }
 
     /// <summary>The answer <c>find_tool</c> gives: what matched, or the whole catalog when nothing did.</summary>
     public JsonObject Answer(string? task, int limit)
@@ -94,10 +97,10 @@ public sealed class ToolIndex
     private static ToolEntry Entry(MethodInfo tool) => new(
         tool.GetCustomAttribute<McpServerToolAttribute>()!.Name!,
         tool.GetCustomAttribute<DescriptionAttribute>()?.Description ?? string.Empty,
-        [.. tool.GetParameters().Where(Fillable).Select(Argument)]);
+        [.. tool.GetParameters().Where(IsFillable).Select(Argument)]);
 
     /// <summary>The parameters the model fills; the request and the cancellation token are the SDK's to fill.</summary>
-    private static bool Fillable(ParameterInfo parameter) =>
+    private static bool IsFillable(ParameterInfo parameter) =>
         parameter.ParameterType != typeof(CancellationToken)
         && parameter.ParameterType != typeof(McpServer)
         && parameter.ParameterType != typeof(RequestContext<CallToolRequestParams>);

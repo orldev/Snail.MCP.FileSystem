@@ -1,56 +1,26 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-    <PropertyGroup>
-        <OutputType>Exe</OutputType>
-        <TargetFramework>net10.0</TargetFramework>
-        <LangVersion>latest</LangVersion>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <InvariantGlobalization>true</InvariantGlobalization>
-        <RollForward>LatestMajor</RollForward>
-    </PropertyGroup>
+<Project Sdk="Snail.Sdk.Mcp">
 
     <!--
-        Native, as Snail.MCP.CleanUp: a platform tool per system, a portable one for the rest; on this Mac
-        `dotnet publish src -c Release -r osx-arm64 -p:Install=true` (Snail.Toolkit.Mcp.Build). The container stays
-        framework-dependent: its build passes -p:PublishAot=false.
+        Native, as Snail.MCP.CleanUp: a platform tool per system, a portable one for the rest (Snail.Sdk.Mcp,
+        SnailMcpNative at its default). Stdio for a program started by one caller, HTTP for the server standing behind
+        every agent of a machine. The container stays framework-dependent: its build passes -p:PublishAot=false.
     -->
     <PropertyGroup>
-        <PublishAot>true</PublishAot>
-        <IsAotCompatible>true</IsAotCompatible>
-        <OptimizationPreference>Size</OptimizationPreference>
-        <ToolPackageRuntimeIdentifiers>osx-arm64;osx-x64;linux-x64;linux-arm64;win-x64;any</ToolPackageRuntimeIdentifiers>
-        <DebugType Condition="'$(PublishAot)' == 'true' and '$(Configuration)' == 'Release'">none</DebugType>
-        <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
-        <SnailMcpName>Snail.MCP.FileSystem</SnailMcpName>
+        <SnailMcpTransport>Both</SnailMcpTransport>
+        <SnailMcpContainer>true</SnailMcpContainer>
     </PropertyGroup>
 
     <PropertyGroup>
-        <PackAsTool>true</PackAsTool>
-        <ToolCommandName>snail-mcp-filesystem</ToolCommandName>
-        <PackageType>McpServer</PackageType>
-        <PackageId>Snail.MCP.FileSystem</PackageId>
         <Version>0.1.0</Version>
-        <Authors>orldev</Authors>
         <Description>Local MCP server that lets AI agents read, write and search the files of the working copy a session names, and nothing outside it.</Description>
         <PackageTags>mcp;mcp-server;modelcontextprotocol;ai;claude;filesystem;dotnet-tool</PackageTags>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <PackageProjectUrl>https://github.com/orldev/Snail.MCP.FileSystem</PackageProjectUrl>
         <RepositoryUrl>https://github.com/orldev/Snail.MCP.FileSystem</RepositoryUrl>
-        <RepositoryType>git</RepositoryType>
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="..\README.md" Pack="true" PackagePath="/" Visible="false"/>
-        <None Include="..\.mcp\server.json" Pack="true" PackagePath="/.mcp/" Visible="false"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Include="Snail.Toolkit.Mcp.Build" Version="0.1.0-preview.1" PrivateAssets="all"/>
-        <PackageReference Include="Snail.Toolkit.Mcp.Hosting" Version="0.1.0-preview.1"/>
-        <PackageReference Include="ModelContextProtocol" Version="2.2.0"/>
-        <PackageReference Include="ModelContextProtocol.AspNetCore" Version="2.2.0"/>
+        <PackageReference Include="ModelContextProtocol"/>
+        <PackageReference Include="ModelContextProtocol.AspNetCore"/>
     </ItemGroup>
 
     <ItemGroup>

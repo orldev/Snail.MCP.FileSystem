@@ -30,7 +30,8 @@ public sealed record ToolStep(string? Tool, JsonObject? Params);
 [McpServerToolType]
 public sealed class SequenceTools(IEnumerable<McpServerTool> tools, ServerConfig config)
 {
-    [McpServerTool(Name = "run_tools")]
+    /// <summary>Several tools of this server in one call, in order, stopping at the first failure.</summary>
+    [McpServerTool(Name = "run_tools", Destructive = true)]
     [Description(ToolDescriptions.RunTools)]
     public async Task<JsonObject> RunToolsAsync(
         RequestContext<CallToolRequestParams> context,

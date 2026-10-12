@@ -2,7 +2,7 @@ using Snail.MCP.FileSystem.Tests.Support;
 
 namespace Snail.MCP.FileSystem.Tests;
 
-/// <summary>Что сервер делает с файлами копии, когда путь ему позволен.</summary>
+/// <summary>What the server does to the files of the copy when the path is allowed to it.</summary>
 public sealed class FileTests
 {
     [Fact]
@@ -18,7 +18,7 @@ public sealed class FileTests
         Assert.Contains("two", answer.Data!["text"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
-    /// <summary>По строкам читают файл, который целиком не нужен: ответ говорит, какие именно строки в нём.</summary>
+    /// <summary>A file not needed whole is read by lines: the answer says which lines it holds.</summary>
     [Fact]
     public void A_file_read_by_lines_returns_those_lines_and_names_them()
     {
@@ -45,8 +45,8 @@ public sealed class FileTests
     }
 
     /// <summary>
-    /// Замена, которой нет в файле, — это вера вызывающего в то, чего файл не говорит. Записать её значит
-    /// согласиться с ошибкой; отказ отправляет читать файл.
+    /// A replacement the file does not contain is the caller believing what the file does not say. Writing it would
+    /// agree with the mistake; the refusal sends the caller to read the file.
     /// </summary>
     [Fact]
     public void An_edit_that_matches_nothing_is_refused_rather_than_written()
@@ -61,7 +61,7 @@ public sealed class FileTests
         Assert.Equal("var x = 1;", File.ReadAllText(Path.Combine(copy.Root, "App.cs")));
     }
 
-    /// <summary>Двусмысленная замена — это две правки вместо одной; какая из них задумана, знает только вызывающий.</summary>
+    /// <summary>An ambiguous replacement is two edits instead of one; only the caller knows which of them was meant.</summary>
     [Fact]
     public void An_edit_that_matches_twice_is_refused_until_it_is_asked_for_twice()
     {
@@ -124,7 +124,7 @@ public sealed class FileTests
         Assert.Contains("wanted", first!["text"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
-    /// <summary>Роль, которой дали сервер только для чтения, не пишет — и слышит почему.</summary>
+    /// <summary>A role given a read-only server does not write, and hears why.</summary>
     [Fact]
     public void A_server_started_read_only_refuses_to_write()
     {

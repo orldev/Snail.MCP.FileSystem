@@ -1,10 +1,10 @@
 using ModelContextProtocol.Client;
-using Snail.Toolkit.Mcp.Testing;
+using Snail.Sdk.Mcp.Testing;
 
 namespace Snail.MCP.FileSystem.Tests;
 
-/// <summary>Сервер как программа: настоящий процесс, запущенный так, как его запускает клиент, и каждый инструмент по разу.</summary>
-/// <remarks>Нативная сборка ломается не при сборке, а на вызове, которому не хватило сведений о типе: шаги run_tools — такой тип.</remarks>
+/// <summary>The server as a program: a real process, started the way a client starts it, and every tool called once.</summary>
+/// <remarks>A native build breaks not when it is built but on a call that lacks the metadata of a type: the steps of run_tools are such a type.</remarks>
 public sealed class StdioContractTests : IDisposable
 {
     private readonly string _root = Directory.CreateTempSubdirectory("snail-mcp-filesystem-stdio").FullName;
@@ -48,6 +48,20 @@ public sealed class StdioContractTests : IDisposable
         }
 
         Assert.Equal("исправлено", File.ReadAllText(Path.Combine(_root, "new.txt")));
+    }
+
+    /// <summary>
+    /// The guard rules of every Snail server, on the list a model receives: names in snake case and listed once, the tool
+    /// and every parameter described, read-only or destructive stated, every allowed value named, English.
+    /// </summary>
+    [Fact]
+    public async Task Tools_AsListed_KeepTheGuardRules()
+    {
+        await using var client = await StartedAsync();
+
+        var listed = await client.ListToolsAsync();
+
+        Assert.Empty(ToolGuards.Problems(listed.Select(tool => tool.ProtocolTool)));
     }
 
     private Task<McpClient> StartedAsync()

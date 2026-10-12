@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using ModelContextProtocol.Protocol;
+using ModelContextProtocol.Server;
 using Snail.MCP.FileSystem.Application;
 
 namespace Snail.MCP.FileSystem.Extensions;
@@ -17,21 +18,27 @@ public static class GrantRegistrationExtensions
         /// </remarks>
         public IMcpServerBuilder RefuseWhatWasNotGranted()
         {
-            builder.WithRequestFilters(filters => filters.AddCallToolFilter(next => async (context, cancellationToken) =>
-            {
-                var grant = context.Server.Services?.GetService<SessionGrant>();
-
-                if (context.Params?.Name is not { } name || grant is null || grant.Allows(name))
-                    return await next(context, cancellationToken);
-
-                return new CallToolResult
-                {
-                    IsError = true,
-                    Content = [new TextContentBlock { Text = grant.Refusal(name) }]
-                };
-            }));
+            builder.WithRequestFilters(filters => filters.AddCallToolFilter(Refusing));
 
             return builder;
         }
     }
+
+    /// <summary>The call handed on when the session was granted the tool, a refusal naming the grant otherwise.</summary>
+    private static McpRequestHandler<CallToolRequestParams, CallToolResult> Refusing(McpRequestHandler<CallToolRequestParams, CallToolResult> next) =>
+        async (context, cancellationToken) =>
+        {
+            var grant = context.Server.Services?.GetService<SessionGrant>();
+
+            if (context.Params?.Name is not { } name || grant is null || grant.Allows(name))
+                return await next(context, cancellationToken);
+
+            var refusal = new CallToolResult
+            {
+                IsError = true,
+                Content = [new TextContentBlock { Text = grant.Refusal(name) }]
+            };
+
+            return refusal;
+        };
 }

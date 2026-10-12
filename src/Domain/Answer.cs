@@ -8,8 +8,10 @@ namespace Snail.MCP.FileSystem.Domain;
 /// </remarks>
 public sealed record Answer(bool IsSuccess, JsonNode? Data, string? Error, string? Hint)
 {
+    /// <summary>An answer carrying its data.</summary>
     public static Answer Ok(JsonNode data) => new(true, data, null, null);
 
+    /// <summary>A refusal, with what the caller can do about it.</summary>
     public static Answer Failed(string error, string? hint = null) => new(false, null, error, hint);
 }
 

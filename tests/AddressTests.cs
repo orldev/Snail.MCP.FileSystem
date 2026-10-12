@@ -13,7 +13,7 @@ using Snail.MCP.FileSystem.Tests.Support;
 
 namespace Snail.MCP.FileSystem.Tests;
 
-/// <summary>Сервер по адресу: откуда он узнаёт корень сессии и кого не пускает на порог.</summary>
+/// <summary>The server at an address: where it learns the root of a session from, and whom it turns away at the door.</summary>
 public sealed class AddressTests
 {
     [Fact]
@@ -27,7 +27,7 @@ public sealed class AddressTests
         Assert.Equal(["/workspaces/one", "/workspaces/two"], address.Values(SessionRoots.Parameter));
     }
 
-    /// <summary>Вне запроса адреса нет вовсе, и выдумывать корень не из чего.</summary>
+    /// <summary>Outside a request there is no address at all, and nothing to invent a root from.</summary>
     [Fact]
     public void Outside_a_request_the_address_says_nothing()
     {
@@ -51,9 +51,9 @@ public sealed class AddressTests
     }
 
     /// <summary>
-    /// Худшая ошибка схемы с адресами: обнаружение служб отдаёт воркеру машины B сервер машины A. В вызове
-    /// это не видно — сервер отвечает, только про чужую пустую папку. Поэтому сессия не открывается вовсе,
-    /// и отказ называет корень.
+    /// The worst failure of servers at addresses: discovery hands the worker of machine B the server of machine A. A call
+    /// does not show it: the server answers, only about somebody else's empty folder. So the session is not opened at all,
+    /// and the refusal names the root.
     /// </summary>
     [Fact]
     public async Task A_session_opened_at_a_root_this_machine_does_not_have_is_refused_and_told_which()
@@ -70,7 +70,7 @@ public sealed class AddressTests
         Assert.Contains(elsewhere, await answer.Content.ReadAsStringAsync(), StringComparison.Ordinal);
     }
 
-    /// <summary>То, ради чего всё: один сервер, и каждая сессия работает в своей копии.</summary>
+    /// <summary>What it is all for: one server, and every session working in its own copy.</summary>
     [Fact]
     public async Task Two_sessions_of_one_server_each_see_their_own_copy_and_not_the_other()
     {
@@ -104,8 +104,8 @@ public sealed class AddressTests
 
 
     /// <summary>
-    /// Сессия без корня на сервере, которому корней не настроили, всё равно не получит ничего. Услышать
-    /// это один раз на пороге лучше, чем слышать от каждого вызова весь шаг.
+    /// A session without a root at a server configured with none would get nothing anyway. Hearing it once at the door
+    /// beats hearing it from every call for the whole step.
     /// </summary>
     [Fact]
     public async Task A_session_that_names_no_root_at_a_server_configured_with_none_is_turned_away()
@@ -122,9 +122,9 @@ public sealed class AddressTests
 
 
     /// <summary>
-    /// Белый список роли держался ровно до того, как ей выдали инструмент, зовущий другие инструменты:
-    /// run_tools дотягивался до всего, что есть у сервера, включая то, что оператор нарочно не выдал.
-    /// Теперь разрешённое называет тот же адрес, что и корень, и проверяется оно на пороге вызова.
+    /// The allow-list of a role held only until it was given a tool that calls other tools: run_tools reached everything
+    /// the server has, including what the operator deliberately did not grant. Now the same address that names the root
+    /// names what is allowed, and it is checked at the door of every call.
     /// </summary>
     [Fact]
     public async Task A_tool_the_session_was_not_granted_is_refused()
@@ -146,7 +146,7 @@ public sealed class AddressTests
             StringComparison.Ordinal);
     }
 
-    /// <summary>Сервер слушает на всех интерфейсах; обращаться к «::» нельзя, поэтому берётся порт и петля.</summary>
+    /// <summary>The server listens on every interface; "::" cannot be called, so the port is taken with loopback.</summary>
     private static string Address(WebApplication server)
     {
         var bound = server.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.First();

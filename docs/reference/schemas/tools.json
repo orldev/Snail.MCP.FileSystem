@@ -1,0 +1,261 @@
+[
+  {
+    "name": "read_file",
+    "description": "Reads a file as text, whole or by lines. Says how many lines it has and whether the answer was cut.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "Path of the file, absolute or relative to the session\u0027s root.",
+          "type": "string"
+        },
+        "from": {
+          "description": "First line to return, counting from one; omit for the start of the file.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "default": null
+        },
+        "to": {
+          "description": "Last line to return; omit for the end of the file.",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "path"
+      ]
+    },
+    "annotations": {
+      "openWorldHint": false,
+      "readOnlyHint": true
+    },
+    "skill": null
+  },
+  {
+    "name": "write_file",
+    "description": "Writes a file whole, creating the folders above it. Overwrites without asking: read it first, or use edit_file to change a part.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "Path of the file, absolute or relative to the session\u0027s root.",
+          "type": "string"
+        },
+        "text": {
+          "description": "The whole new contents of the file.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "text"
+      ]
+    },
+    "annotations": {
+      "destructiveHint": true,
+      "openWorldHint": false
+    },
+    "skill": null
+  },
+  {
+    "name": "edit_file",
+    "description": "Replaces exact text in a file. Refuses when the text is not there, and when it is there more than once without \u0027all\u0027 \u2014 a replacement the caller did not mean is worse than no replacement.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "Path of the file, absolute or relative to the session\u0027s root.",
+          "type": "string"
+        },
+        "find": {
+          "description": "The exact text to replace, including its indentation and line ends.",
+          "type": "string"
+        },
+        "replace": {
+          "description": "What to put in its place; empty removes it.",
+          "type": "string"
+        },
+        "all": {
+          "description": "Replace every occurrence rather than refusing when there is more than one.",
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "required": [
+        "path",
+        "find",
+        "replace"
+      ]
+    },
+    "annotations": {
+      "destructiveHint": true,
+      "openWorldHint": false
+    },
+    "skill": null
+  },
+  {
+    "name": "list_directory",
+    "description": "Lists what is under a folder, to the depth asked for. Build output and .git are never walked into.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "description": "Folder to work in; omit for the session\u0027s root.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "depth": {
+          "description": "How many folders deep to go; two by default, eight at most.",
+          "type": "integer",
+          "default": 2
+        }
+      }
+    },
+    "annotations": {
+      "openWorldHint": false,
+      "readOnlyHint": true
+    },
+    "skill": null
+  },
+  {
+    "name": "find_files",
+    "description": "Names the files whose path matches a glob: *.cs, **/Tests/*.cs, appsettings.*.json.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "pattern": {
+          "description": "The glob to match. \u0027*\u0027 stays inside one folder, \u0027**\u0027 crosses them.",
+          "type": "string"
+        },
+        "path": {
+          "description": "Folder to work in; omit for the session\u0027s root.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "pattern"
+      ]
+    },
+    "annotations": {
+      "openWorldHint": false,
+      "readOnlyHint": true
+    },
+    "skill": null
+  },
+  {
+    "name": "search_text",
+    "description": "Names the lines that contain a text, with the file and the line number of each. Exact text, not a pattern.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "description": "The text to look for, matched exactly.",
+          "type": "string"
+        },
+        "path": {
+          "description": "Folder to work in; omit for the session\u0027s root.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "pattern": {
+          "description": "Only search files whose path matches this glob.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "query"
+      ]
+    },
+    "annotations": {
+      "openWorldHint": false,
+      "readOnlyHint": true
+    },
+    "skill": null
+  },
+  {
+    "name": "find_tool",
+    "description": "Names the tools that answer a task described in words, with the parameters each takes.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "task": {
+          "description": "What you are trying to do, in words: \u0027change one line\u0027, \u0027where is this text\u0027.",
+          "type": "string"
+        },
+        "limit": {
+          "description": "How many tools to name; five by default.",
+          "type": "integer",
+          "default": 5
+        }
+      },
+      "required": [
+        "task"
+      ]
+    },
+    "annotations": {
+      "openWorldHint": false,
+      "readOnlyHint": true
+    },
+    "skill": null
+  },
+  {
+    "name": "run_tools",
+    "description": "Runs several of this server\u0027s tools in one call, in order, stopping at the first failure. For steps that do not depend on reading the previous answer. Each step is an ordinary tool call.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "steps": {
+          "description": "Steps in order: {\u0022tool\u0022: \u0022read_file\u0022, \u0022params\u0022: {\u0022path\u0022: \u0022src/App.cs\u0022}}. Call find_tool for what a tool takes.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "tool": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "params": {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "tool",
+              "params"
+            ]
+          }
+        }
+      },
+      "required": [
+        "steps"
+      ]
+    },
+    "annotations": {
+      "destructiveHint": true
+    },
+    "skill": null
+  }
+]

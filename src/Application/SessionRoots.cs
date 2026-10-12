@@ -70,12 +70,12 @@ public sealed class SessionRoots(ServerConfig config, ISessionAddress address)
             ? Path.GetFullPath(path.Trim())
             : Path.GetFullPath(Path.Combine(roots[0], path.Trim())));
 
-        return roots.Any(root => Under(full, Real(root)))
+        return roots.Any(root => IsUnder(full, Real(root)))
             ? Reached.Yes(full)
             : Reached.No($"'{path.Trim()}' is outside this session, which works in {string.Join(", ", roots)}");
     }
 
-    private static bool Under(string path, string root) =>
+    private static bool IsUnder(string path, string root) =>
         string.Equals(path, root, StringComparison.Ordinal)
         || path.StartsWith(root.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar, StringComparison.Ordinal);
 
@@ -135,9 +135,12 @@ public sealed class SessionRoots(ServerConfig config, ISessionAddress address)
 /// <summary>A path this session may use, or the reason it may not.</summary>
 public sealed record Reached(string? Path, string? Error, string? Hint)
 {
+    /// <summary>Whether the path may be used; <see cref="Path"/> is then the resolved one.</summary>
     public bool IsAllowed => Path is not null;
 
+    /// <summary>The resolved path, allowed.</summary>
     public static Reached Yes(string path) => new(path, null, null);
 
+    /// <summary>A refusal, with what the caller can do about it.</summary>
     public static Reached No(string error, string? hint = null) => new(null, error, hint);
 }

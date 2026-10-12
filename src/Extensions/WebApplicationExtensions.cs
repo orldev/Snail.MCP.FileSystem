@@ -22,7 +22,7 @@ public static class WebApplicationExtensions
                 return;
             }
 
-            app.Logger.LogWarning("A session was turned away: {Reason}", refusal);
+            Log.SessionTurnedAway(app.Logger, refusal);
 
             context.Response.StatusCode = StatusCodes.Status400BadRequest;
             context.Response.ContentType = "text/plain; charset=utf-8";

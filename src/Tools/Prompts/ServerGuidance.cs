@@ -3,6 +3,7 @@ namespace Snail.MCP.FileSystem.Tools.Prompts;
 /// <summary>What the client is told about this server when it connects.</summary>
 public static class ServerGuidance
 {
+    /// <summary>The instructions the server sends in its answer to initialize.</summary>
     public const string Instructions =
         """
         This server works only in the folder this session was given — the working copy named in the address
