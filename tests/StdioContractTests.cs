@@ -50,6 +50,15 @@ public sealed class StdioContractTests : IDisposable
         Assert.Equal("исправлено", File.ReadAllText(Path.Combine(_root, "new.txt")));
     }
 
+    /// <summary>A client knows the server by the command a person types to start it.</summary>
+    [Fact]
+    public async Task Initialize_AsAProgram_NamesTheServerByItsCommand()
+    {
+        await using var client = await StartedAsync();
+
+        Assert.Equal("s3l-mcp-filesystem", client.ServerInfo.Name);
+    }
+
     /// <summary>
     /// The guard rules of every Snail server, on the list a model receives: names in snake case and listed once, the tool
     /// and every parameter described, read-only or destructive stated, every allowed value named, English.

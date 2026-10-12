@@ -55,7 +55,11 @@ public static class ServiceCollectionExtensions
             builder.Services.AddSingleton<ToolIndex>();
 
             return builder.Services
-                .AddMcpServer(options => options.ServerInstructions = ServerGuidance.Instructions)
+                .AddMcpServer(options =>
+                {
+                    options.ServerInfo = ServerIdentity.Of(typeof(ServiceCollectionExtensions).Assembly);
+                    options.ServerInstructions = ServerGuidance.Instructions;
+                })
                 .RefuseWhatWasNotGranted()
                 .WithTools<FileTools>(ToolJson.Options(FileSystemJson.Default))
                 .WithTools<DiscoveryTools>(ToolJson.Options(FileSystemJson.Default))
