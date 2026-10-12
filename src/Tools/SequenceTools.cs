@@ -63,7 +63,7 @@ public sealed class SequenceTools(IEnumerable<McpServerTool> tools, ServerConfig
 
             if (result.IsError is true)
             {
-                results.Add(new JsonObject { ["tool"] = tool.ProtocolTool.Name, ["ok"] = false, ["error"] = text });
+                results.Add((JsonNode)new JsonObject { ["tool"] = tool.ProtocolTool.Name, ["ok"] = false, ["error"] = text });
 
                 return Stopped(results, omitted, $"step {at + 1} of {steps.Length} ({tool.ProtocolTool.Name}) failed: {text}", null);
             }
@@ -71,12 +71,12 @@ public sealed class SequenceTools(IEnumerable<McpServerTool> tools, ServerConfig
             if (text.Length <= budget)
             {
                 budget -= text.Length;
-                results.Add(new JsonObject { ["tool"] = tool.ProtocolTool.Name, ["ok"] = true, ["data"] = Parsed(text) });
+                results.Add((JsonNode)new JsonObject { ["tool"] = tool.ProtocolTool.Name, ["ok"] = true, ["data"] = Parsed(text) });
             }
             else
             {
                 omitted++;
-                results.Add(new JsonObject { ["tool"] = tool.ProtocolTool.Name, ["ok"] = true, ["isOmitted"] = true });
+                results.Add((JsonNode)new JsonObject { ["tool"] = tool.ProtocolTool.Name, ["ok"] = true, ["isOmitted"] = true });
             }
         }
 
@@ -111,7 +111,7 @@ public sealed class SequenceTools(IEnumerable<McpServerTool> tools, ServerConfig
     private static IDictionary<string, JsonElement>? Given(JsonObject? arguments) =>
         arguments?.ToDictionary(
             pair => pair.Key,
-            pair => JsonSerializer.Deserialize<JsonElement>(pair.Value?.ToJsonString() ?? "null"),
+            pair => JsonElement.Parse(pair.Value?.ToJsonString() ?? "null"),
             StringComparer.Ordinal);
 
     private static string Text(CallToolResult result) =>

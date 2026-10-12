@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Hosting;
 using Snail.MCP.FileSystem.Configuration;
 
+using Snail.Toolkit.Mcp.Hosting;
+
 namespace Snail.MCP.FileSystem.Extensions;
 
 /// <summary>The server as a running host: listening at an address when it was given a port, a child process otherwise.</summary>
@@ -40,7 +42,7 @@ public static class McpServerHost
 
     private static IHost Spoken(string[] args, ServerConfig config)
     {
-        var builder = Host.CreateApplicationBuilder(args);
+        var builder = McpHost.CreateBuilder(args);
 
         builder.ConfigureMcpServerAsAProgram(config);
 

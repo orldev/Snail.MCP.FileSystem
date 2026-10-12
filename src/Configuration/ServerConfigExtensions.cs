@@ -36,8 +36,12 @@ public static class ServerConfigExtensions
         return config;
     }
 
+    /// <summary>What every variable this server reads begins with.</summary>
+    public const string Prefix = "SNAIL_MCP_FILESYSTEM_";
+
+    /// <remarks>The reading is Snail.Toolkit.Mcp's, the same in every Snail server: <c>MAX_FILE_BYTES</c> is <c>MaxFileBytes</c>, <c>ROOTS__0</c> is <c>Roots:0</c>.</remarks>
     private static IConfigurationBuilder Sources(IConfigurationBuilder configuration) =>
-        configuration.AddEnvironmentVariables("SNAIL_MCP_FILESYSTEM_");
+        configuration.AddInMemoryCollection(Snail.Toolkit.Mcp.Hosting.EnvironmentSettings.Read(Prefix, Environment.GetEnvironmentVariables()));
 
     /// <summary>Expands <c>~</c> and makes every root absolute, so a relative root cannot mean one folder here and another there.</summary>
     internal static void Normalize(ServerConfig config) =>

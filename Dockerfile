@@ -10,7 +10,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /source
 COPY . .
-RUN dotnet publish src/Snail.MCP.FileSystem.csproj -c Release -o /app
+RUN dotnet publish src/Snail.MCP.FileSystem.csproj -c Release -o /app -p:PublishAot=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app

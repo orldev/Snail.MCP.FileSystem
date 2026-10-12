@@ -17,6 +17,13 @@ public sealed class ToolContractTests
             .Where(method => method.GetCustomAttribute<McpServerToolAttribute>() is not null)
     ];
 
+    /// <summary>Указатель называет классы инструментов поимённо, ради нативной сборки; класс, которого там нет, пропал бы из find_tool.</summary>
+    [Fact]
+    public void The_index_holds_every_tool_there_is() =>
+        Assert.Equal(
+            Tools.Select(tool => tool.GetCustomAttribute<McpServerToolAttribute>()!.Name!).Order(StringComparer.Ordinal),
+            ToolIndex.All.Select(entry => entry.Name).Order(StringComparer.Ordinal));
+
     [Fact]
     public void Every_tool_is_named_the_way_a_protocol_name_is_written() =>
         Assert.All(Tools, tool => Assert.Matches("^[a-z][a-z0-9_]*$", tool.GetCustomAttribute<McpServerToolAttribute>()!.Name!));

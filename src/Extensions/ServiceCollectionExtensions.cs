@@ -6,6 +6,8 @@ using Snail.MCP.FileSystem.Configuration;
 using Snail.MCP.FileSystem.Tools;
 using Snail.MCP.FileSystem.Tools.Prompts;
 
+using Snail.Toolkit.Mcp.Hosting;
+
 namespace Snail.MCP.FileSystem.Extensions;
 
 /// <summary>The composition root: what the server is, in one place.</summary>
@@ -36,7 +38,7 @@ public static class ServiceCollectionExtensions
         /// </remarks>
         public IHostApplicationBuilder ConfigureMcpServerAsAProgram(ServerConfig config)
         {
-            builder.Logging.AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Trace);
+            builder.Logging.UseStderr();
             builder.Services.AddSingleton<ISessionAddress, StdioAddress>();
             builder.ConfigureMcpServer(config).WithStdioServerTransport();
 
@@ -55,9 +57,9 @@ public static class ServiceCollectionExtensions
             return builder.Services
                 .AddMcpServer(options => options.ServerInstructions = ServerGuidance.Instructions)
                 .RefuseWhatWasNotGranted()
-                .WithTools<FileTools>()
-                .WithTools<DiscoveryTools>()
-                .WithTools<SequenceTools>();
+                .WithTools<FileTools>(ToolJson.Options(FileSystemJson.Default))
+                .WithTools<DiscoveryTools>(ToolJson.Options(FileSystemJson.Default))
+                .WithTools<SequenceTools>(ToolJson.Options(FileSystemJson.Default));
         }
     }
 }

@@ -10,6 +10,21 @@
         <RollForward>LatestMajor</RollForward>
     </PropertyGroup>
 
+    <!--
+        Native, as Snail.MCP.CleanUp: a platform tool per system, a portable one for the rest; on this Mac
+        `dotnet publish src -c Release -r osx-arm64 -p:Install=true` (Snail.Toolkit.Mcp.Build). The container stays
+        framework-dependent: its build passes -p:PublishAot=false.
+    -->
+    <PropertyGroup>
+        <PublishAot>true</PublishAot>
+        <IsAotCompatible>true</IsAotCompatible>
+        <OptimizationPreference>Size</OptimizationPreference>
+        <ToolPackageRuntimeIdentifiers>osx-arm64;osx-x64;linux-x64;linux-arm64;win-x64;any</ToolPackageRuntimeIdentifiers>
+        <DebugType Condition="'$(PublishAot)' == 'true' and '$(Configuration)' == 'Release'">none</DebugType>
+        <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
+        <SnailMcpName>Snail.MCP.FileSystem</SnailMcpName>
+    </PropertyGroup>
+
     <PropertyGroup>
         <PackAsTool>true</PackAsTool>
         <ToolCommandName>snail-mcp-filesystem</ToolCommandName>
@@ -32,7 +47,8 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.11"/>
+        <PackageReference Include="Snail.Toolkit.Mcp.Build" Version="0.1.0-preview.1" PrivateAssets="all"/>
+        <PackageReference Include="Snail.Toolkit.Mcp.Hosting" Version="0.1.0-preview.1"/>
         <PackageReference Include="ModelContextProtocol" Version="2.2.0"/>
         <PackageReference Include="ModelContextProtocol.AspNetCore" Version="2.2.0"/>
     </ItemGroup>

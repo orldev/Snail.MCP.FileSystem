@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
@@ -74,15 +75,21 @@ public sealed class ToolIndex
         })])
     };
 
+    /// <remarks>
+    /// The classes are named rather than looked for in the assembly: a native build keeps the methods of a type it is
+    /// told about and nothing it would have to find. A guard test keeps the list every tool class there is.
+    /// </remarks>
     private static IReadOnlyList<ToolEntry> Read() =>
     [
-        .. typeof(ToolIndex).Assembly.GetTypes()
-            .Where(type => type.GetCustomAttribute<McpServerToolTypeAttribute>() is not null)
-            .OrderBy(type => type.Name, StringComparer.Ordinal)
-            .SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Instance))
-            .Where(method => method.GetCustomAttribute<McpServerToolAttribute>() is not null)
-            .Select(Entry)
+        .. Of(typeof(DiscoveryTools)),
+        .. Of(typeof(FileTools)),
+        .. Of(typeof(SequenceTools))
     ];
+
+    private static IEnumerable<ToolEntry> Of([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] Type type) =>
+        type.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+            .Where(method => method.GetCustomAttribute<McpServerToolAttribute>() is not null)
+            .Select(Entry);
 
     private static ToolEntry Entry(MethodInfo tool) => new(
         tool.GetCustomAttribute<McpServerToolAttribute>()!.Name!,
