@@ -1,22 +1,32 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Snail.Sdk.Mcp.Hosting;
 
 namespace Snail.MCP.FileSystem.Configuration;
 
-/// <summary>Builds <see cref="ServerConfig"/>: defaults, then environment variables.</summary>
+/// <summary>Builds <see cref="ServerConfig"/>: defaults, then the settings file, then environment variables.</summary>
 public static class ServerConfigExtensions
 {
-    /// <summary>What the environment says the server is, read before there is a host to read it into.</summary>
+    /// <summary>The server's short name, which names its settings file and its variables.</summary>
+    public const string Server = "filesystem";
+
+    /// <summary>What every variable this server reads begins with.</summary>
+    /// <remarks>The reading is Snail.Sdk.Mcp's, the same in every Snail server: <c>MAX_FILE_BYTES</c> is <c>MaxFileBytes</c>, <c>ROOTS__0</c> is <c>Roots:0</c>.</remarks>
+    public const string Prefix = "SNAIL_MCP_FILESYSTEM_";
+
+    /// <summary>What the settings file and the environment say the server is, read before there is a host to read it into.</summary>
     /// <remarks>
     /// Read first and separately because the answer decides which host is built at all: a port means a
     /// web host listening for sessions, no port means a console speaking stdio to its parent. Binding it
     /// afterwards would be binding it too late.
     /// </remarks>
-    public static ServerConfig Read()
+    public static ServerConfig Read() => Read(ServerSettings.Read(Server));
+
+    /// <summary>What the given settings say, normalized and checked.</summary>
+    internal static ServerConfig Read(IConfiguration configuration)
     {
         var config = new ServerConfig();
-        var configuration = Sources(new ConfigurationBuilder()).Build();
 
         configuration.GetSection(ServerConfig.SectionName).Bind(config);
         configuration.Bind(config);
@@ -30,18 +40,10 @@ public static class ServerConfigExtensions
     /// <summary>Puts the configuration the host was started with where the rest of the server reads it.</summary>
     public static ServerConfig AddServerConfiguration(this IHostApplicationBuilder builder, ServerConfig config)
     {
-        Sources(builder.Configuration);
         builder.Services.AddSingleton(config);
 
         return config;
     }
-
-    /// <summary>What every variable this server reads begins with.</summary>
-    public const string Prefix = "SNAIL_MCP_FILESYSTEM_";
-
-    /// <remarks>The reading is Snail.Sdk.Mcp's, the same in every Snail server: <c>MAX_FILE_BYTES</c> is <c>MaxFileBytes</c>, <c>ROOTS__0</c> is <c>Roots:0</c>.</remarks>
-    private static IConfigurationBuilder Sources(IConfigurationBuilder configuration) =>
-        configuration.AddInMemoryCollection(Snail.Sdk.Mcp.Hosting.EnvironmentSettings.Read(Prefix, Environment.GetEnvironmentVariables()));
 
     /// <summary>Expands <c>~</c> and makes every root absolute, so a relative root cannot mean one folder here and another there.</summary>
     internal static void Normalize(ServerConfig config) =>

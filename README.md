@@ -49,6 +49,19 @@ dotnet tool install --global Snail.MCP.FileSystem
 
 ## Configuration
 
+Every setting is a field of the settings file or an environment variable prefixed `SNAIL_MCP_FILESYSTEM_`; a variable
+wins over the file. The file is the one `SNAIL_MCP_FILESYSTEM_CONFIG` names, the only one read when it is set, or else
+the first that exists of the chain every Snail MCP server reads ([Snail.Sdk](https://orldev.github.io/Snail.Sdk/)):
+`.s3l-mcp-filesystem.json` or `s3l-mcp-filesystem.json` in the working directory,
+`~/.config/s3l-mcp-filesystem/config.json`, `~/.s3l-mcp-filesystem.json`. A setting of this machine goes into `~/.config/s3l-mcp-filesystem/config.json`, readable by you alone
+(`chmod 600`), never into a launchd job or a client's registration, which travel wherever they are copied. In the file
+`SNAIL_MCP_FILESYSTEM_ROOTS__0` is the first item of `"Roots"` and `SNAIL_MCP_FILESYSTEM_MAX_MATCHES` is
+`"MaxMatches"`; the fields may also be nested under `"Snail"`:
+
+```json
+{ "Roots": ["/path/to/your/copy"], "AllowWrite": false }
+```
+
 | Variable | Meaning |
 |---|---|
 | `SNAIL_MCP_FILESYSTEM_PORT` | Port to answer sessions on; unset means the server is started as a program and speaks stdio |

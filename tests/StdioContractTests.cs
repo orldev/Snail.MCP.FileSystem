@@ -81,7 +81,7 @@ public sealed class StdioContractTests : IDisposable
         {
             Command = command,
             Arguments = arguments,
-            EnvironmentVariables = new Dictionary<string, string?> { [$"{ServerConfigExtensions.Prefix}ROOTS__0"] = _root }
+            EnvironmentVariables = new Dictionary<string, string?> { [$"{ServerConfigExtensions.Prefix}ROOTS__0"] = _root, [$"{ServerConfigExtensions.Prefix}CONFIG"] = ServerProgram.NoSettingsFile }
         }));
     }
 }
