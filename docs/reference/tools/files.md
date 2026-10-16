@@ -2,7 +2,7 @@
 
 ## <code>read_<wbr>file</code>
 
-Reads a file as text, whole or by lines. Says how many lines it has and whether the answer was cut.
+Reads a file as text, whole or by lines. Says how many lines it has and whether the answer was cut. A file too large to read whole is read by lines.
 
 *read-only · every call adds · stays on this machine.*
 
@@ -84,14 +84,14 @@ Writes a file whole, creating the folders above it. Overwrites without asking: r
 
 ## <code>edit_<wbr>file</code>
 
-Replaces exact text in a file. Refuses when the text is not there, and when it is there more than once without 'all' — a replacement the caller did not mean is worse than no replacement.
+Replaces exact text in a file; nothing else in it changes, its encoding and line ends included. Refuses when the text is not there, and when it is there more than once without 'all'.
 
 *may overwrite or delete · every call adds · stays on this machine.*
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
 | `path` | `string` | yes | — | Path of the file, absolute or relative to the session's root. |
-| `find` | `string` | yes | — | The exact text to replace, including its indentation and line ends. |
+| `find` | `string` | yes | — | The exact text to replace, with its indentation; a line end may be written as \n. |
 | `replace` | `string` | yes | — | What to put in its place; empty removes it. |
 | `all` | `boolean` | — | `false` | Replace every occurrence rather than refusing when there is more than one. |
 
@@ -106,7 +106,7 @@ Replaces exact text in a file. Refuses when the text is not there, and when it i
       "type": "string"
     },
     "find": {
-      "description": "The exact text to replace, including its indentation and line ends.",
+      "description": "The exact text to replace, with its indentation; a line end may be written as \\n.",
       "type": "string"
     },
     "replace": {
@@ -131,7 +131,7 @@ Replaces exact text in a file. Refuses when the text is not there, and when it i
 
 ## <code>list_<wbr>directory</code>
 
-Lists what is under a folder, to the depth asked for. Build output and .git are never walked into.
+Lists what is under a folder, to the depth asked for. Build output, .git and links are never walked into.
 
 *read-only · every call adds · stays on this machine.*
 
@@ -205,7 +205,7 @@ Names the files whose path matches a glob: *.cs, **/Tests/*.cs, appsettings.*.js
 
 ## <code>search_<wbr>text</code>
 
-Names the lines that contain a text, with the file and the line number of each. Exact text, not a pattern.
+Names the lines that contain a text, with the file and the line number of each. Exact text, not a pattern. Names the files it could not search.
 
 *read-only · every call adds · stays on this machine.*
 

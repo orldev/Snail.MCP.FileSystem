@@ -8,9 +8,9 @@ namespace Snail.MCP.FileSystem.Application;
 /// could not help: it knew nothing about roles.
 /// <para>
 /// So the grant travels the same way the root does — in the address the session was opened at:
-/// <c>…/mcp?root=/workspaces/task&amp;tool=read_file&amp;tool=search_text</c>. It is fixed when the session
-/// opens, the model cannot reach it, and it is checked where calls arrive rather than inside each tool
-/// that might forward one. A session that names no tool may use them all, which is what a server started
+/// <c>…/mcp?root=/workspaces/task&amp;tool=read_file&amp;tool=search_text</c>. The platform writes it into every
+/// request, the model cannot reach it, and it is checked where calls arrive and again for every step
+/// <c>run_tools</c> forwards. A session that names no tool may use them all, which is what a server started
 /// as a program for one caller has always been.
 /// </para>
 /// </remarks>
@@ -31,7 +31,7 @@ public sealed class SessionGrant(ISessionAddress address)
     /// <summary>Whether this session may call that tool.</summary>
     public bool Allows(string name)
     {
-        var granted = All;
+        IReadOnlyList<string> granted = All;
 
         return granted.Count == 0 || granted.Contains(name, StringComparer.OrdinalIgnoreCase);
     }

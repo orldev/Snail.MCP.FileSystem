@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Snail.MCP.FileSystem.Adapters;
@@ -17,6 +18,7 @@ namespace Snail.MCP.FileSystem.Extensions;
 /// there is no URL to name anything: the server belongs to the one caller that started it and is confined
 /// by the roots it was given. Everything between the two is the same server, which is why it is written once.
 /// </remarks>
+[SuppressMessage("Design", "CA1034:Nested types should not be visible", Justification = "A C# 14 extension block, which the guidelines ask for, compiles to a nested type; there is no nested type in the source.")]
 public static class ServiceCollectionExtensions
 {
     extension(IHostApplicationBuilder builder)
@@ -49,6 +51,7 @@ public static class ServiceCollectionExtensions
         {
             builder.AddServerConfiguration(config);
 
+            builder.Services.AddSingleton<IWorkingCopy, LocalDisk>();
             builder.Services.AddSingleton<SessionRoots>();
             builder.Services.AddSingleton<SessionGrant>();
             builder.Services.AddSingleton<Files>();

@@ -42,16 +42,18 @@ public sealed class FileTools(Files files)
     [Description(ToolDescriptions.List)]
     public CallToolResult List(
         [Description(ToolDescriptions.ListPath)] string? path = null,
-        [Description(ToolDescriptions.ListDepth)] int depth = 2) =>
-        ToolResponse.From(files.List(path, depth));
+        [Description(ToolDescriptions.ListDepth)] int depth = 2,
+        CancellationToken cancellationToken = default) =>
+        ToolResponse.From(files.List(path, depth, cancellationToken));
 
     /// <summary>The files whose path matches a glob.</summary>
     [McpServerTool(Name = "find_files", ReadOnly = true, OpenWorld = false)]
     [Description(ToolDescriptions.Find)]
     public CallToolResult Find(
         [Description(ToolDescriptions.FindPattern)] string pattern,
-        [Description(ToolDescriptions.ListPath)] string? path = null) =>
-        ToolResponse.From(files.Find(pattern, path));
+        [Description(ToolDescriptions.ListPath)] string? path = null,
+        CancellationToken cancellationToken = default) =>
+        ToolResponse.From(files.Find(pattern, path, cancellationToken));
 
     /// <summary>The lines that contain a text.</summary>
     [McpServerTool(Name = "search_text", ReadOnly = true, OpenWorld = false)]
@@ -59,6 +61,7 @@ public sealed class FileTools(Files files)
     public CallToolResult Search(
         [Description(ToolDescriptions.SearchQuery)] string query,
         [Description(ToolDescriptions.ListPath)] string? path = null,
-        [Description(ToolDescriptions.SearchPattern)] string? pattern = null) =>
-        ToolResponse.From(files.Search(query, path, pattern));
+        [Description(ToolDescriptions.SearchPattern)] string? pattern = null,
+        CancellationToken cancellationToken = default) =>
+        ToolResponse.From(files.Search(query, path, pattern, cancellationToken));
 }

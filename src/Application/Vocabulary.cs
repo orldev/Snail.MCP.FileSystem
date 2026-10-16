@@ -37,7 +37,7 @@ public static class Vocabulary
         var words = new List<string>();
         var word = new StringBuilder();
 
-        foreach (var letter in text ?? string.Empty)
+        foreach (char letter in text ?? string.Empty)
         {
             if (char.IsLetterOrDigit(letter))
             {
@@ -51,7 +51,9 @@ public static class Vocabulary
         }
 
         if (word.Length > 0)
+        {
             words.Add(word.ToString());
+        }
 
         return words;
     }
@@ -63,9 +65,9 @@ public static class Vocabulary
     /// <summary>The same, for a tool the index knows other words for than the ones it is named with.</summary>
     public static double Score(string question, string name, string? keywords, string? description)
     {
-        var named = Words(name);
-        var meant = Words(keywords);
-        var described = Words(description);
+        IReadOnlyList<string> named = Words(name);
+        IReadOnlyList<string> meant = Words(keywords);
+        IReadOnlyList<string> described = Words(description);
 
         return Words(question)
             .Where(asked => !Common.Contains(asked))
@@ -75,10 +77,14 @@ public static class Vocabulary
     private static double Weight(string asked, IReadOnlyList<string> named, IReadOnlyList<string> meant, IReadOnlyList<string> described)
     {
         if (named.Contains(asked, StringComparer.Ordinal) || meant.Contains(asked, StringComparer.Ordinal))
+        {
             return InTheName;
+        }
 
         if (Forms(named, asked) || Forms(meant, asked))
+        {
             return LikeTheName;
+        }
 
         return described.Contains(asked, StringComparer.Ordinal) || Forms(described, asked) ? InTheDescription : 0.0;
     }
@@ -93,12 +99,14 @@ public static class Vocabulary
     /// </summary>
     private static bool Shares(string word, string asked)
     {
-        var shortest = Math.Min(word.Length, asked.Length);
-        var enough = Math.Min(ShortestStem, shortest);
-        var common = 0;
+        int shortest = Math.Min(word.Length, asked.Length);
+        int enough = Math.Min(ShortestStem, shortest);
+        int common = 0;
 
         while (common < shortest && word[common] == asked[common])
+        {
             common++;
+        }
 
         return common >= enough;
     }

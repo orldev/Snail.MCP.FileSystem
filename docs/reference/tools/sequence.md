@@ -2,7 +2,7 @@
 
 ## <code>run_<wbr>tools</code>
 
-Runs several of this server's tools in one call, in order, stopping at the first failure. For steps that do not depend on reading the previous answer. Each step is an ordinary tool call.
+Runs several of this server's tools in one call, in order, stopping at the first failure. For steps that do not depend on reading the previous answer. Each step is an ordinary tool call under the same grant; run_tools is not a step.
 
 *may overwrite or delete · every call adds · stays on this machine.*
 

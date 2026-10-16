@@ -61,30 +61,44 @@ public static class ServerConfigExtensions
         var faults = new List<string>();
 
         if (config.OutputLimitChars < 1024)
+        {
             faults.Add($"OutputLimitChars must be at least 1024, not {config.OutputLimitChars}");
+        }
 
         if (config.MaxFileBytes < 1024)
+        {
             faults.Add($"MaxFileBytes must be at least 1024, not {config.MaxFileBytes}");
+        }
 
         if (config.MaxMatches <= 0)
+        {
             faults.Add($"MaxMatches must be positive, not {config.MaxMatches}");
+        }
 
         if (config.StepLimit <= 0)
+        {
             faults.Add($"StepLimit must be positive, not {config.StepLimit}");
+        }
 
         if (faults.Count > 0)
+        {
             throw new InvalidOperationException($"invalid configuration: {string.Join("; ", faults)}");
+        }
     }
 
     internal static string Expand(string path)
     {
-        var trimmed = path.Trim();
+        string trimmed = path.Trim();
 
         if (trimmed == "~")
+        {
             return Home;
+        }
 
         if (trimmed.StartsWith("~/", StringComparison.Ordinal) || trimmed.StartsWith(@"~\", StringComparison.Ordinal))
+        {
             return Path.Combine(Home, trimmed[2..]);
+        }
 
         return Path.GetFullPath(trimmed);
     }

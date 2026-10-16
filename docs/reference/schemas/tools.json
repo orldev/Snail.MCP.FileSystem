@@ -1,7 +1,7 @@
 [
   {
     "name": "read_file",
-    "description": "Reads a file as text, whole or by lines. Says how many lines it has and whether the answer was cut.",
+    "description": "Reads a file as text, whole or by lines. Says how many lines it has and whether the answer was cut. A file too large to read whole is read by lines.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -64,7 +64,7 @@
   },
   {
     "name": "edit_file",
-    "description": "Replaces exact text in a file. Refuses when the text is not there, and when it is there more than once without \u0027all\u0027 \u2014 a replacement the caller did not mean is worse than no replacement.",
+    "description": "Replaces exact text in a file; nothing else in it changes, its encoding and line ends included. Refuses when the text is not there, and when it is there more than once without \u0027all\u0027.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -73,7 +73,7 @@
           "type": "string"
         },
         "find": {
-          "description": "The exact text to replace, including its indentation and line ends.",
+          "description": "The exact text to replace, with its indentation; a line end may be written as \\n.",
           "type": "string"
         },
         "replace": {
@@ -100,7 +100,7 @@
   },
   {
     "name": "list_directory",
-    "description": "Lists what is under a folder, to the depth asked for. Build output and .git are never walked into.",
+    "description": "Lists what is under a folder, to the depth asked for. Build output, .git and links are never walked into.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -156,7 +156,7 @@
   },
   {
     "name": "search_text",
-    "description": "Names the lines that contain a text, with the file and the line number of each. Exact text, not a pattern.",
+    "description": "Names the lines that contain a text, with the file and the line number of each. Exact text, not a pattern. Names the files it could not search.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -219,7 +219,7 @@
   },
   {
     "name": "run_tools",
-    "description": "Runs several of this server\u0027s tools in one call, in order, stopping at the first failure. For steps that do not depend on reading the previous answer. Each step is an ordinary tool call.",
+    "description": "Runs several of this server\u0027s tools in one call, in order, stopping at the first failure. For steps that do not depend on reading the previous answer. Each step is an ordinary tool call under the same grant; run_tools is not a step.",
     "inputSchema": {
       "type": "object",
       "properties": {

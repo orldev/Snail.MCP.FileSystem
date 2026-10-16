@@ -8,7 +8,8 @@ public static class ToolDescriptions
 
     /// <summary>What <c>read_file</c> does.</summary>
     public const string Read =
-        "Reads a file as text, whole or by lines. Says how many lines it has and whether the answer was cut.";
+        "Reads a file as text, whole or by lines. Says how many lines it has and whether the answer was cut. "
+        + "A file too large to read whole is read by lines.";
 
     /// <summary>The <c>from</c> parameter of <c>read_file</c>.</summary>
     public const string ReadFrom = "First line to return, counting from one; omit for the start of the file.";
@@ -26,11 +27,11 @@ public static class ToolDescriptions
 
     /// <summary>What <c>edit_file</c> does.</summary>
     public const string Edit =
-        "Replaces exact text in a file. Refuses when the text is not there, and when it is there more "
-        + "than once without 'all' — a replacement the caller did not mean is worse than no replacement.";
+        "Replaces exact text in a file; nothing else in it changes, its encoding and line ends included. Refuses when "
+        + "the text is not there, and when it is there more than once without 'all'.";
 
     /// <summary>The <c>find</c> parameter of <c>edit_file</c>.</summary>
-    public const string EditFind = "The exact text to replace, including its indentation and line ends.";
+    public const string EditFind = "The exact text to replace, with its indentation; a line end may be written as \\n.";
 
     /// <summary>The <c>replace</c> parameter of <c>edit_file</c>.</summary>
     public const string EditReplace = "What to put in its place; empty removes it.";
@@ -40,7 +41,7 @@ public static class ToolDescriptions
 
     /// <summary>What <c>list_directory</c> does.</summary>
     public const string List =
-        "Lists what is under a folder, to the depth asked for. Build output and .git are never walked into.";
+        "Lists what is under a folder, to the depth asked for. Build output, .git and links are never walked into.";
 
     /// <summary>The <c>path</c> parameter of the tools that work in a folder.</summary>
     public const string ListPath = "Folder to work in; omit for the session's root.";
@@ -57,7 +58,8 @@ public static class ToolDescriptions
 
     /// <summary>What <c>search_text</c> does.</summary>
     public const string Search =
-        "Names the lines that contain a text, with the file and the line number of each. Exact text, not a pattern.";
+        "Names the lines that contain a text, with the file and the line number of each. Exact text, not a pattern. "
+        + "Names the files it could not search.";
 
     /// <summary>The <c>query</c> parameter of <c>search_text</c>.</summary>
     public const string SearchQuery = "The text to look for, matched exactly.";
@@ -78,7 +80,8 @@ public static class ToolDescriptions
     /// <summary>What <c>run_tools</c> does.</summary>
     public const string RunTools =
         "Runs several of this server's tools in one call, in order, stopping at the first failure. "
-        + "For steps that do not depend on reading the previous answer. Each step is an ordinary tool call.";
+        + "For steps that do not depend on reading the previous answer. Each step is an ordinary tool call under the "
+        + "same grant; run_tools is not a step.";
 
     /// <summary>The <c>steps</c> parameter of <c>run_tools</c>.</summary>
     public const string RunToolsSteps =

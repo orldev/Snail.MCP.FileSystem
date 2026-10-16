@@ -13,7 +13,7 @@ public sealed class ServerConfig
     public const string SectionName = "Snail";
 
     /// <summary>Absolute paths the agent may read and write; nothing outside them is reachable.</summary>
-    public string[] Roots { get; set; } = [];
+    public IReadOnlyList<string> Roots { get; set; } = [];
 
     /// <summary>Port to answer on; none means the server is started as a program and speaks stdio.</summary>
     /// <remarks>
@@ -39,5 +39,5 @@ public sealed class ServerConfig
     public int StepLimit { get; set; } = 20;
 
     /// <summary>Folder names never walked into, because nobody means them and they are enormous.</summary>
-    public string[] Skip { get; set; } = [".git", "bin", "obj", "node_modules", ".vs", ".idea"];
+    public IReadOnlyList<string> Skip { get; set; } = [".git", "bin", "obj", "node_modules", ".vs", ".idea"];
 }

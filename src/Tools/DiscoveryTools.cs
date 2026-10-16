@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using Snail.MCP.FileSystem.Tools.Prompts;
 
@@ -11,8 +12,8 @@ public sealed class DiscoveryTools(ToolIndex index)
     /// <summary>The tools that answer a task described in words.</summary>
     [McpServerTool(Name = "find_tool", ReadOnly = true, OpenWorld = false)]
     [Description(ToolDescriptions.FindTool)]
-    public JsonObject FindTool(
+    public CallToolResult FindTool(
         [Description(ToolDescriptions.FindToolTask)] string task,
         [Description(ToolDescriptions.FindToolLimit)] int limit = 5) =>
-        index.Answer(task, limit);
+        ToolResponse.Json(index.Answer(task, limit));
 }

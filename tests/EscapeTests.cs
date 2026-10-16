@@ -13,11 +13,11 @@ public sealed class EscapeTests
     [InlineData("../../etc/passwd")]
     [InlineData("./../../etc/passwd")]
     [InlineData("/etc/passwd")]
-    public void A_path_that_climbs_out_of_the_root_is_refused(string path)
+    public void Read_PathClimbingOutOfTheRoot_IsRefused(string path)
     {
         using var copy = new Copy();
 
-        var answer = copy.Files.Read(path, null, null);
+        Answer answer = copy.Files.Read(path, null, null);
 
         Assert.False(answer.IsSuccess);
         Assert.Contains("outside this session", answer.Error!, StringComparison.Ordinal);
@@ -25,11 +25,11 @@ public sealed class EscapeTests
 
     /// <summary>A neighbour whose name merely starts the same way is the classic way out of the cage.</summary>
     [Fact]
-    public void A_sibling_whose_name_merely_begins_the_same_way_is_outside()
+    public void Read_SiblingWhoseNameBeginsTheSame_IsOutside()
     {
         using var copy = new Copy();
 
-        var sibling = copy.Root + "-secrets";
+        string sibling = copy.Root + "-secrets";
         Directory.CreateDirectory(sibling);
 
         try
@@ -44,21 +44,21 @@ public sealed class EscapeTests
 
     /// <summary>A symlink inside the copy is the cheapest way out of it, so links are resolved.</summary>
     [Fact]
-    public void A_symlink_that_leads_out_of_the_root_does_not_pass_as_a_path_inside_it()
+    public void Read_LinkLeadingOutOfTheRoot_IsRefused()
     {
         using var copy = new Copy();
 
-        var elsewhere = Directory.CreateTempSubdirectory("snail-mcp-filesystem-elsewhere").FullName;
+        string elsewhere = TestFolder.Create();
         File.WriteAllText(Path.Combine(elsewhere, "secret.txt"), "not yours");
 
         try
         {
             Directory.CreateSymbolicLink(Path.Combine(copy.Root, "out"), elsewhere);
 
-            var answer = copy.Files.Read(Path.Combine(copy.Root, "out", "secret.txt"), null, null);
+            Answer answer = copy.Files.Read(Path.Combine(copy.Root, "out", "secret.txt"), null, null);
 
             Assert.False(answer.IsSuccess);
-            Assert.Contains("outside this session", answer.Error!, StringComparison.Ordinal);
+            Assert.Contains("outside this session", answer.Error, StringComparison.Ordinal);
         }
         finally
         {
@@ -68,11 +68,11 @@ public sealed class EscapeTests
 
     /// <summary>A write outside spoils somebody else's work, and it is checked on the same path as a read.</summary>
     [Fact]
-    public void A_write_outside_the_root_is_refused_before_anything_is_written()
+    public void Write_OutsideTheRoot_IsRefusedBeforeAnythingIsWritten()
     {
         using var copy = new Copy();
 
-        var elsewhere = Path.Combine(Path.GetTempPath(), $"snail-mcp-filesystem-{Guid.NewGuid():n}.txt");
+        string elsewhere = Path.Combine(TestFolder.Create(), "mine-now.txt");
 
         Assert.False(copy.Files.Write(elsewhere, "mine now").IsSuccess);
         Assert.False(File.Exists(elsewhere));
@@ -80,15 +80,15 @@ public sealed class EscapeTests
 
     /// <summary>A session without a root gets nothing: closed by default, not open to everything.</summary>
     [Fact]
-    public void A_session_given_no_root_reaches_nothing()
+    public void Session_GivenNoRoot_ReachesNothing()
     {
         var config = new ServerConfig { Roots = [] };
-        var files = new Files(new SessionRoots(config, new Address()), config);
+        Files files = Copy.At(config, new Address());
 
-        var answer = files.Read("/etc/passwd", null, null);
+        Answer answer = files.Read("/etc/passwd", null, null);
 
         Assert.False(answer.IsSuccess);
-        Assert.Contains("no root", answer.Error!, StringComparison.Ordinal);
+        Assert.Contains("no root", answer.Error, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -97,7 +97,7 @@ public sealed class EscapeTests
     /// the isolation all of this is written for. The root of the address does not add to the configured ones, it replaces them.
     /// </summary>
     [Fact]
-    public void A_session_that_names_its_root_does_not_also_get_the_volume_the_server_was_configured_with()
+    public void Session_NamingItsRoot_DoesNotAlsoGetTheConfiguredVolume()
     {
         using var mine = new Copy();
         using var theirs = new Copy();
@@ -105,14 +105,14 @@ public sealed class EscapeTests
         theirs.Write("secret.txt", "not yours");
 
         var config = new ServerConfig { Roots = [Path.GetTempPath()] };
-        var files = new Files(new SessionRoots(config, new Address(mine.Root)), config);
+        Files files = Copy.At(config, new Address(mine.Root));
 
         Assert.False(files.Read(Path.Combine(theirs.Root, "secret.txt"), null, null).IsSuccess);
     }
 
     /// <summary>The root from the address is what it is all for: one server behind several agents.</summary>
     [Fact]
-    public void A_root_named_by_the_address_is_the_one_served()
+    public void Session_RootNamedByTheAddress_IsTheOneServed()
     {
         using var mine = new Copy();
         using var theirs = new Copy();
@@ -121,7 +121,7 @@ public sealed class EscapeTests
         theirs.Write("own.txt", "theirs");
 
         var config = new ServerConfig { Roots = [] };
-        var files = new Files(new SessionRoots(config, new Address(mine.Root)), config);
+        Files files = Copy.At(config, new Address(mine.Root));
 
         Assert.True(files.Read(Path.Combine(mine.Root, "own.txt"), null, null).IsSuccess);
         Assert.False(files.Read(Path.Combine(theirs.Root, "own.txt"), null, null).IsSuccess);

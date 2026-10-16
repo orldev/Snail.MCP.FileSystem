@@ -33,11 +33,11 @@ public sealed class ToolIndex
     /// <summary>The tools that answer a question, best first; every one of them when none does.</summary>
     public IReadOnlyList<ToolEntry> Find(string? task, int limit)
     {
-        var answering = All
+        IEnumerable<(ToolEntry Entry, double Score)> answering = All
             .Select(entry => (Entry: entry, Score: Vocabulary.Score(task ?? string.Empty, entry.Name, Meant(entry.Name), entry.Description)))
             .Where(scored => scored.Score > 0);
 
-        var best = answering
+        IEnumerable<(ToolEntry Entry, double Score)> best = answering
             .OrderByDescending(scored => scored.Score)
             .ThenBy(scored => scored.Entry.Name, StringComparer.Ordinal)
             .Take(Math.Clamp(limit, 1, All.Count));
@@ -48,7 +48,7 @@ public sealed class ToolIndex
     /// <summary>The answer <c>find_tool</c> gives: what matched, or the whole catalog when nothing did.</summary>
     public JsonObject Answer(string? task, int limit)
     {
-        var found = Find(task, limit);
+        IReadOnlyList<ToolEntry> found = Find(task, limit);
 
         return new JsonObject
         {
@@ -120,9 +120,3 @@ public sealed class ToolIndex
         : type == typeof(ToolStep[]) ? "step[]"
         : "object";
 }
-
-/// <summary>One tool as the index knows it.</summary>
-public sealed record ToolEntry(string Name, string Description, IReadOnlyList<ToolArgument> Parameters);
-
-/// <summary>One argument of a tool, with the words the model reads before filling it.</summary>
-public sealed record ToolArgument(string Name, string Type, bool IsRequired, string Description);

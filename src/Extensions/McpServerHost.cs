@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Snail.MCP.FileSystem.Configuration;
 
 using Snail.Sdk.Mcp.Hosting;
+using Snail.Sdk.Mcp.Http;
 
 namespace Snail.MCP.FileSystem.Extensions;
 
@@ -15,7 +16,7 @@ public static class McpServerHost
     /// <summary>Builds whichever of the two shapes the configuration asks for.</summary>
     public static IHost Of(string[] args)
     {
-        var config = ServerConfigExtensions.Read();
+        ServerConfig config = ServerConfigExtensions.Read();
 
         return config.Port > 0 ? Listening(args, config) : Spoken(args, config);
     }
@@ -23,27 +24,29 @@ public static class McpServerHost
     /// <summary>The server answering sessions at <see cref="ServerConfig.Port"/>; a port of zero takes any free one.</summary>
     /// <remarks>
     /// Bound on every interface because the callers are the workers of the machine, each in its own
-    /// container: a server on loopback would be reachable from nothing but itself.
+    /// container: a server on loopback would be reachable from nothing but itself. A request that carries an
+    /// <c>Origin</c> is refused, as Snail.Sdk.Mcp.Http refuses it: a page in a browser always sends one, an
+    /// agent's client never does.
     /// </remarks>
     internal static WebApplication Listening(string[] args, ServerConfig config)
     {
-        var builder = WebApplication.CreateSlimBuilder(args);
+        WebApplicationBuilder builder = WebApplication.CreateSlimBuilder(args);
 
         builder.Configuration.AddServerSettings(ServerConfigExtensions.Server);
         builder.ConfigureMcpServerAtAnAddress(config);
 
-        var app = builder.Build();
+        WebApplication app = builder.Build();
 
         app.Urls.Add($"http://*:{config.Port}");
         app.RefuseASessionItCannotServe();
-        app.MapMcp(Path);
+        app.MapLocalMcp(Path);
 
         return app;
     }
 
     private static IHost Spoken(string[] args, ServerConfig config)
     {
-        var builder = McpHost.CreateBuilder(args);
+        HostApplicationBuilder builder = McpHost.CreateBuilder(args);
 
         builder.ConfigureMcpServerAsAProgram(config);
 

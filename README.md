@@ -19,7 +19,10 @@ rather than serving the disk.
 **The roots are per session, not per process.** A session opened at `…/mcp?root=/path/to/copy` is served
 that path and nothing else, which is what lets one server stand behind several agents without any of
 them reaching another's working copy; repeat `root` for more than one. `SNAIL_MCP_FILESYSTEM_ROOTS__0`
-stays for sessions that name none — a server started as a program for one caller behaves as it always did.
+is the volume those copies live in: a session naming a folder outside it is refused at the door, and a
+session that names none is served the volume itself — a server started as a program for one caller behaves
+as it always did. A request carrying an `Origin`, which a browser always sends and an agent never does, is
+refused too.
 
 ## Two shapes, one server
 
@@ -29,6 +32,10 @@ caller and is confined by `SNAIL_MCP_FILESYSTEM_ROOTS__0`. This is the shape a d
 **At an address.** Given `SNAIL_MCP_FILESYSTEM_PORT`, it listens on every interface and serves sessions
 at `/mcp`, each naming its own copy in the URL. One server then stands behind every agent on the
 machine, and nothing in its image has to be repeated in theirs.
+
+The image runs as its `app` user (uid 1654), as every Snail image does, and the server writes as whoever runs it.
+Where the copies belong to another user, run it as that user: on the Swarm stand the workers write them as root, so
+the stand starts it with `user: "0:0"` — as `app` it would read a task's files and refuse to change them.
 
 A session opened at a root **this machine does not have** is refused on the spot, with the root named:
 
@@ -72,14 +79,21 @@ the first that exists of the chain every Snail MCP server reads ([Snail.Sdk](htt
 | `SNAIL_MCP_FILESYSTEM_MAX_MATCHES` | Matches one search or listing may return |
 | `SNAIL_MCP_FILESYSTEM_STEP_LIMIT` | Steps one `run_tools` call may take |
 
-## Two things worth knowing
+## Worth knowing
 
 **`edit_file` replaces exact text, not a line range.** A line number is stale the moment anything above
 it changes. A replacement that matches nothing is refused rather than written, and one that matches
-twice is refused until `all` is passed: a replacement the caller did not mean is worse than none.
+twice is refused until `all` is passed: a replacement the caller did not mean is worse than none. Only the
+replaced text changes: a file keeps its encoding, its byte order mark and its line ends, and the `\n` of a
+replacement is written as the file writes its line ends. A file is replaced in one step, so a reader never
+sees it half written, and two edits of one file at once both land.
 
-**`run_tools` widens one grant.** A caller given it can reach every tool of this server, including ones
-it was not given separately. The server's own boundary — the session's roots — holds all the same.
+**The walks stay in the copy.** `list_directory`, `find_files` and `search_text` follow no link, pass a
+folder they may not open, and name in the answer what they could not read, so an empty answer is never
+"nothing matched" when it was "nothing was looked at".
+
+**`run_tools` keeps the grant.** A session opened with `&tool=` names may use those tools and no others,
+whether it calls them itself or as steps of `run_tools`; and `run_tools` does not run itself.
 
 ## Every answer is JSON
 

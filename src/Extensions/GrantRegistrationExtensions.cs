@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
@@ -6,6 +7,7 @@ using Snail.MCP.FileSystem.Application;
 namespace Snail.MCP.FileSystem.Extensions;
 
 /// <summary>The grant of a session, checked where calls arrive rather than inside each tool.</summary>
+[SuppressMessage("Design", "CA1034:Nested types should not be visible", Justification = "A C# 14 extension block, which the guidelines ask for, compiles to a nested type; there is no nested type in the source.")]
 public static class GrantRegistrationExtensions
 {
     extension(IMcpServerBuilder builder)
@@ -28,10 +30,12 @@ public static class GrantRegistrationExtensions
     private static McpRequestHandler<CallToolRequestParams, CallToolResult> Refusing(McpRequestHandler<CallToolRequestParams, CallToolResult> next) =>
         async (context, cancellationToken) =>
         {
-            var grant = context.Server.Services?.GetService<SessionGrant>();
+            SessionGrant? grant = context.Server.Services?.GetService<SessionGrant>();
 
             if (context.Params?.Name is not { } name || grant is null || grant.Allows(name))
+            {
                 return await next(context, cancellationToken);
+            }
 
             var refusal = new CallToolResult
             {

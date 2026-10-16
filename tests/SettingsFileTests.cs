@@ -8,45 +8,45 @@ namespace Snail.MCP.FileSystem.Tests;
 /// <summary>The settings file of Snail.Sdk's chain sets what the variables set, and a variable wins over the file.</summary>
 public sealed class SettingsFileTests : IDisposable
 {
-    private readonly string _scratch = Directory.CreateTempSubdirectory("filesystem-settings-tests").FullName;
+    private readonly string _scratch = TestFolder.Create();
 
     public void Dispose() => Directory.Delete(_scratch, recursive: true);
 
     [Fact]
-    public void Roots_written_in_the_settings_file_are_the_servers_roots_with_the_home_expanded()
+    public void Read_RootsInTheSettingsFile_AreTheRootsWithTheHomeExpanded()
     {
-        var file = SettingsFile(new JsonObject { ["Roots"] = new JsonArray("~/src/app", _scratch), ["MaxMatches"] = 7 });
+        string file = SettingsFile(new JsonObject { ["Roots"] = new JsonArray("~/src/app", _scratch), ["MaxMatches"] = 7 });
 
-        var config = ServerConfigExtensions.Read(Settings(file, new Hashtable()));
+        ServerConfig config = ServerConfigExtensions.Read(Settings(file, new Hashtable()));
 
         Assert.Equal([Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "src/app"), _scratch], config.Roots);
         Assert.Equal(7, config.MaxMatches);
     }
 
     [Fact]
-    public void Settings_nested_under_the_snail_section_of_the_file_are_read()
+    public void Read_SettingsUnderTheSnailSection_AreRead()
     {
-        var file = SettingsFile(new JsonObject { [ServerConfig.SectionName] = new JsonObject { ["MaxFileBytes"] = 4096 } });
+        string file = SettingsFile(new JsonObject { [ServerConfig.SectionName] = new JsonObject { ["MaxFileBytes"] = 4096 } });
 
         Assert.Equal(4096, ServerConfigExtensions.Read(Settings(file, new Hashtable())).MaxFileBytes);
     }
 
     [Fact]
-    public void A_variable_wins_over_the_settings_file()
+    public void Read_VariableAndSettingsFile_VariableWins()
     {
-        var file = SettingsFile(new JsonObject { ["AllowWrite"] = true, ["MaxMatches"] = 7 });
+        string file = SettingsFile(new JsonObject { ["AllowWrite"] = true, ["MaxMatches"] = 7 });
         var variables = new Hashtable { [$"{ServerConfigExtensions.Prefix}ALLOW_WRITE"] = "false" };
 
-        var config = ServerConfigExtensions.Read(Settings(file, variables));
+        ServerConfig config = ServerConfigExtensions.Read(Settings(file, variables));
 
         Assert.False(config.AllowWrite);
         Assert.Equal(7, config.MaxMatches);
     }
 
     [Fact]
-    public void A_limit_that_makes_no_sense_in_the_settings_file_stops_the_server()
+    public void Read_LimitThatMakesNoSense_StopsTheServer()
     {
-        var file = SettingsFile(new JsonObject { ["StepLimit"] = 0 });
+        string file = SettingsFile(new JsonObject { ["StepLimit"] = 0 });
 
         Assert.Throws<InvalidOperationException>(() => ServerConfigExtensions.Read(Settings(file, new Hashtable())));
     }
@@ -56,7 +56,7 @@ public sealed class SettingsFileTests : IDisposable
 
     private string SettingsFile(JsonObject settings)
     {
-        var file = Path.Combine(_scratch, "config.json");
+        string file = Path.Combine(_scratch, "config.json");
 
         File.WriteAllText(file, settings.ToJsonString());
 
