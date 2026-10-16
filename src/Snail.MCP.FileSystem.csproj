@@ -3,7 +3,7 @@
     <!--
         Native, as Snail.MCP.CleanUp: a platform tool per system, a portable one for the rest (Snail.Sdk.Mcp,
         SnailMcpNative at its default). Stdio for a program started by one caller, HTTP for the server standing behind
-        every agent of a machine. The container is native too: its Dockerfile publishes for linux-x64.
+        every agent of a machine. The container is native too: its Dockerfile publishes for the platform the image is built for.
     -->
     <PropertyGroup>
         <SnailMcpTransport>Both</SnailMcpTransport>

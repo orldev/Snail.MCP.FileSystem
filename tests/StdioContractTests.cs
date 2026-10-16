@@ -56,7 +56,7 @@ public sealed class StdioContractTests : IDisposable
     {
         await using McpClient client = await StartedAsync();
 
-        Assert.Equal("s3l-mcp-filesystem", client.ServerInfo.Name);
+        Assert.Equal("s3l-mcp-filesystem", client.ServerInfo?.Name);
     }
 
     /// <summary>
