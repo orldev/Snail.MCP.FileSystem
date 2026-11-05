@@ -29,9 +29,12 @@ refused too.
 **As a program.** Started with no port, it speaks stdio to whatever started it, belongs to that one
 caller and is confined by `SNAIL_MCP_FILESYSTEM_ROOTS__0`. This is the shape a desktop client installs.
 
-**At an address.** Given `SNAIL_MCP_FILESYSTEM_PORT`, it listens on every interface and serves sessions
-at `/mcp`, each naming its own copy in the URL. One server then stands behind every agent on the
-machine, and nothing in its image has to be repeated in theirs.
+**At an address.** Given `SNAIL_MCP_FILESYSTEM_PORT`, it serves sessions at `/mcp`, each naming its own copy in
+the URL. One server then stands behind every agent on the machine, and nothing in its image has to be repeated in
+theirs. It listens on loopback; the image turns on `SNAIL_MCP_FILESYSTEM_LISTENS_ON_EVERY_INTERFACE`, since a container's
+published port does not reach its loopback, and the published port is then the boundary: the endpoint asks for no
+credential, so publish it where only the agents reach it — `docker run -p 127.0.0.1:8820:8820`, or the stand's own
+network.
 
 The image runs as its `app` user (uid 1654), as every Snail image does, and the server writes as whoever runs it.
 Where the copies belong to another user, run it as that user: on the Swarm stand the workers write them as root, so
@@ -72,6 +75,7 @@ the first that exists of the chain every Snail MCP server reads ([Snail.Sdk](htt
 | Variable | Meaning |
 |---|---|
 | `SNAIL_MCP_FILESYSTEM_PORT` | Port to answer sessions on; unset means the server is started as a program and speaks stdio |
+| `SNAIL_MCP_FILESYSTEM_LISTENS_ON_EVERY_INTERFACE` | Whether that port is opened on every interface rather than on loopback; `true` in the image, `false` otherwise |
 | `SNAIL_MCP_FILESYSTEM_ROOTS__0` | Absolute path the agent may work in when the session names none; add `ROOTS__1` for more |
 | `SNAIL_MCP_FILESYSTEM_ALLOW_WRITE` | Whether `write_file` and `edit_file` do anything; `true` by default |
 | `SNAIL_MCP_FILESYSTEM_OUTPUT_LIMIT_CHARS` | Characters of file text one call may return before it is cut |

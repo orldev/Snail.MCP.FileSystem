@@ -116,6 +116,27 @@ public sealed class SessionRoots(ServerConfig config, ISessionAddress address, I
         }
     }
 
+    /// <summary>The path as the caller should name it again: relative to the first root when it lies under it, whole otherwise.</summary>
+    /// <remarks>
+    /// The first root, because a relative path is reached from it: a file under the second root named relative to its own
+    /// root read the file of that name under the first when it was handed back. Against the root with its links resolved,
+    /// as the path was: a root that is a link, <c>/var</c> on macOS among them, made every answer name the host's
+    /// absolute real path.
+    /// </remarks>
+    public string Relative(string full)
+    {
+        IReadOnlyList<string> roots = All;
+
+        if (roots.Count == 0)
+        {
+            return full;
+        }
+
+        string first = Real(roots[0]);
+
+        return IsUnder(full, first) ? Path.GetRelativePath(first, full) : full;
+    }
+
     private static bool IsUnder(string path, string root) =>
         string.Equals(path, root, StringComparison.Ordinal)
         || path.StartsWith($"{root.TrimEnd(Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}", StringComparison.Ordinal);

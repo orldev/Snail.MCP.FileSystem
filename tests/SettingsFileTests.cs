@@ -43,6 +43,29 @@ public sealed class SettingsFileTests : IDisposable
         Assert.Equal(7, config.MaxMatches);
     }
 
+    /// <summary>The image opens its port on every interface through this one variable; read as anything else, the container listened where nothing reaches it.</summary>
+    [Fact]
+    public void Read_VariableTheImageSets_OpensEveryInterface()
+    {
+        var variables = new Hashtable
+        {
+            [$"{ServerConfigExtensions.Prefix}PORT"] = "8820",
+            [$"{ServerConfigExtensions.Prefix}LISTENS_ON_EVERY_INTERFACE"] = "true"
+        };
+
+        ServerConfig config = ServerConfigExtensions.Read(Settings(null, variables));
+
+        Assert.True(config.ListensOnEveryInterface);
+    }
+
+    [Fact]
+    public void Read_EveryInterfaceWithoutAPort_StopsTheServer()
+    {
+        var variables = new Hashtable { [$"{ServerConfigExtensions.Prefix}LISTENS_ON_EVERY_INTERFACE"] = "true" };
+
+        Assert.Throws<InvalidOperationException>(() => ServerConfigExtensions.Read(Settings(null, variables)));
+    }
+
     [Fact]
     public void Read_LimitThatMakesNoSense_StopsTheServer()
     {

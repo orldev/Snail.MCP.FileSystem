@@ -88,8 +88,8 @@ public sealed class DiskChaosTests
         public long Length(string path) =>
             IsGone(path) ? throw new FileNotFoundException("the file was deleted a moment ago", path) : _disk.Length(path);
 
-        public IEnumerable<string> Lines(string path) =>
-            IsFailing(path) ? throw new IOException("Operation timed out") : _disk.Lines(path);
+        public IEnumerable<string> Lines(string path, int longest) =>
+            IsFailing(path) ? throw new IOException("Operation timed out") : _disk.Lines(path, longest);
 
         public byte[] Bytes(string path) =>
             IsFailing(path) ? throw new IOException("Operation timed out") : _disk.Bytes(path);

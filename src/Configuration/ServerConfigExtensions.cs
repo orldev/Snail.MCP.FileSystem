@@ -75,6 +75,11 @@ public static class ServerConfigExtensions
             faults.Add($"MaxMatches must be positive, not {config.MaxMatches}");
         }
 
+        if (config.ListensOnEveryInterface && config.Port <= 0)
+        {
+            faults.Add($"ListensOnEveryInterface needs a Port to open, not {config.Port}");
+        }
+
         if (config.StepLimit <= 0)
         {
             faults.Add($"StepLimit must be positive, not {config.StepLimit}");

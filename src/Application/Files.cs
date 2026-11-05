@@ -1,5 +1,5 @@
 using System.Text;
-using System.Text.Unicode;
+using System.Text.RegularExpressions;
 using Snail.MCP.FileSystem.Configuration;
 
 namespace Snail.MCP.FileSystem.Application;
@@ -18,13 +18,11 @@ public sealed class Files(SessionRoots roots, ServerConfig config, IWorkingCopy 
     /// <summary>UTF-8 that refuses what is not UTF-8, rather than turning it into U+FFFD.</summary>
     private static readonly UTF8Encoding Strict = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
 
-    /// <summary>Latin-1, which maps every byte to one character and back: a file that is not UTF-8 is edited byte for byte.</summary>
-    private static readonly Encoding Bytewise = Encoding.GetEncoding("iso-8859-1", EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback);
-
     private static readonly object[] Stripes = [.. Enumerable.Range(0, 64).Select(_ => new object())];
 
     /// <summary>The text of a file, whole or by lines, with what was cut named.</summary>
-    public Answer Read(string? path, int? from, int? to) => Guarded(path, () => Reading(path, from, to));
+    public Answer Read(string? path, int? from, int? to, CancellationToken cancellationToken = default) =>
+        Guarded(path, () => Reading(path, from, to, cancellationToken));
 
     /// <summary>Writes a file whole, making the folders above it.</summary>
     public Answer Write(string? path, string? text) => Guarded(path, () => Writing(path, text));
@@ -64,11 +62,15 @@ public sealed class Files(SessionRoots roots, ServerConfig config, IWorkingCopy 
         {
             return Answer.Failed($"the text for {Quoted(path)} holds half of a character", "send whole characters; a surrogate pair is never split");
         }
+        catch (RegexMatchTimeoutException)
+        {
+            return Answer.Failed("the pattern takes too long to match", "use fewer stars: *.cs, src/**/*.cs");
+        }
     }
 
     private static string Quoted(string? path) => string.IsNullOrWhiteSpace(path) ? "the session's root" : $"'{path}'";
 
-    private Answer Reading(string? path, int? from, int? to)
+    private Answer Reading(string? path, int? from, int? to, CancellationToken cancellationToken)
     {
         if (roots.Reach(path) is not { IsAllowed: true } reached)
         {
@@ -88,7 +90,7 @@ public sealed class Files(SessionRoots roots, ServerConfig config, IWorkingCopy 
         }
 
         int first = Math.Max(1, from ?? 1);
-        var window = LineWindow.Of(disk, reached.Path!, first, to ?? int.MaxValue, config.OutputLimitChars);
+        var window = LineWindow.Of(disk, reached.Path!, first, to ?? int.MaxValue, config.OutputLimitChars, cancellationToken);
         string text = string.Join('\n', window.Taken);
         bool cut = text.Length > config.OutputLimitChars;
 
@@ -180,41 +182,55 @@ public sealed class Files(SessionRoots roots, ServerConfig config, IWorkingCopy 
 
     /// <summary>The replacement made in the file as it is now, and written back whole in one step.</summary>
     /// <remarks>
-    /// Only the replaced text changes. The file is read as bytes: as UTF-8 when it is UTF-8, and otherwise byte for byte as
-    /// Latin-1, which gives every byte back exactly as it was. Decoded leniently, every Latin-1 letter of a file became
-    /// U+FFFD and was written back as such by an edit of another line. A byte order mark is written back as it was.
+    /// Only the replaced text changes. The file is read as bytes and decoded by <see cref="TextCodec"/>: in the encoding its
+    /// byte order mark names, as UTF-8 when it is UTF-8, and otherwise byte for byte as Latin-1, which gives every byte back
+    /// exactly as it was. Decoded leniently, every Latin-1 letter of a file became U+FFFD and was written back as such by an
+    /// edit of another line. A byte order mark is written back as it was.
     /// <c>read_file</c> shows every line end as <c>\n</c>, so in a file with Windows line ends the <c>\n</c> of the text
-    /// to find and of its replacement is the file's <c>\r\n</c>.
+    /// to find and of its replacement is the file's <c>\r\n</c>. A file of no bytes is not opened, as the walks do not
+    /// open one: a named pipe has a length of zero, and reading it waited for a writer inside the lock of its stripe.
+    /// A file past <c>MaxFileBytes</c> is not read either, as <c>read_file</c> does not read one whole: held as bytes and
+    /// twice as text, a generated file of a gigabyte or two took the shared server's memory.
     /// </remarks>
     private Answer Replaced(string path, string find, string replace, bool all)
     {
+        long length = disk.Length(path);
+
+        if (length == 0)
+        {
+            return Answer.Failed($"'{Shown(path)}' does not contain that text", "the file is empty, or is not a file that holds text");
+        }
+
+        if (length > config.MaxFileBytes)
+        {
+            return Answer.Failed($"'{Shown(path)}' is larger than {config.MaxFileBytes} bytes", "write it whole with write_file, or ask whoever runs the server for a larger MaxFileBytes");
+        }
+
         byte[] bytes = disk.Bytes(path);
-        int mark = bytes.AsSpan().StartsWith(Encoding.UTF8.Preamble) ? Encoding.UTF8.Preamble.Length : 0;
-        Encoding encoding = IsUtf8(bytes, mark) ? Strict : Bytewise;
-        string before = encoding.GetString(bytes, mark, bytes.Length - mark);
+        var codec = TextCodec.Of(bytes);
+        string before = codec.Decode(bytes);
 
-        string wanted = Ended(before, find);
-        int found = Occurrences(before, wanted);
-
-        if (found == 0)
+        if (Spelled(before, find) is not { } wanted)
         {
             return Answer.Failed($"'{Shown(path)}' does not contain that text", "read the file first; whitespace counts");
         }
+
+        int found = Occurrences(before, wanted);
 
         if (found > 1 && !all)
         {
             return Answer.Failed($"that text appears {found} times in '{Shown(path)}'", "give more of it, or pass all to replace every one");
         }
 
-        string with = Ended(before, replace);
+        string with = EndedLike(before, wanted, replace);
         string after = all ? before.Replace(wanted, with, StringComparison.Ordinal) : ReplaceFirst(before, wanted, with);
 
-        if (Encoded(encoding, after) is not { } written)
+        if (codec.Encode(bytes, after) is not { } written)
         {
             return Answer.Failed($"'{Shown(path)}' is not UTF-8, and the replacement holds letters its bytes cannot hold", "keep the replacement to ASCII, or write the file whole with write_file");
         }
 
-        disk.Replace(path, [.. bytes.AsSpan(0, mark), .. written]);
+        disk.Replace(path, written);
 
         return Answer.Ok(new JsonObject
         {
@@ -224,34 +240,43 @@ public sealed class Files(SessionRoots roots, ServerConfig config, IWorkingCopy 
         });
     }
 
-    private static bool IsUtf8(byte[] bytes, int mark) => Utf8.IsValid(bytes.AsSpan(mark));
-
-    /// <summary>The text as the bytes of that encoding, or null when it holds a letter the encoding has no bytes for.</summary>
-    private static byte[]? Encoded(Encoding encoding, string text)
+    /// <summary>The text to find as the file spells it: as given where it occurs so, else with Windows line ends, else null.</summary>
+    /// <remarks>
+    /// Chosen by where the text is, not for the whole file: one <c>\r\n</c> in a header made every <c>\n</c> of the text a
+    /// <c>\r\n</c>, and a file of mixed line ends refused every multi-line edit of its Unix part.
+    /// </remarks>
+    private static string? Spelled(string file, string text)
     {
-        try
+        if (file.Contains(text, StringComparison.Ordinal))
         {
-            return encoding.GetBytes(text);
+            return text;
         }
-        catch (EncoderFallbackException)
-        {
-            return null;
-        }
+
+        string windows = Windows(text);
+
+        return file.Contains(windows, StringComparison.Ordinal) ? windows : null;
     }
 
-    /// <summary>The text with its <c>\n</c> written as the file writes its line ends.</summary>
-    private static string Ended(string file, string text) =>
-        file.Contains("\r\n", StringComparison.Ordinal) && !text.Contains("\r\n", StringComparison.Ordinal)
-            ? text.Replace("\n", "\r\n", StringComparison.Ordinal)
-            : text;
+    /// <summary>The replacement with the line ends of the text it replaces, or of the file when that text is one line.</summary>
+    private static string EndedLike(string file, string wanted, string replace)
+    {
+        bool isWindows = wanted.Contains("\r\n", StringComparison.Ordinal)
+            || (!wanted.Contains('\n', StringComparison.Ordinal) && file.Contains("\r\n", StringComparison.Ordinal));
+
+        return isWindows ? Windows(replace) : replace;
+    }
+
+    private static string Windows(string text) =>
+        text.Contains("\r\n", StringComparison.Ordinal) ? text : text.Replace("\n", "\r\n", StringComparison.Ordinal);
 
     /// <summary>The lock of one path: an edit reads, replaces and writes with nothing of another edit of the same file between.</summary>
     /// <remarks>
     /// A client sends a model's parallel calls in parallel, and two edits of one file each wrote back the file as they had
     /// read it: 17 of 32 parallel edits were lost while every caller heard ok. Paths share 64 locks rather than holding one
-    /// each, so the locks never grow with the files touched.
+    /// each, so the locks never grow with the files touched. The lock ignores case: on a disk that does too, the default
+    /// of macOS, <c>slots.txt</c> and <c>SLOTS.TXT</c> took two locks for one file and lost 16 of 32 edits.
     /// </remarks>
-    private static object Stripe(string path) => Stripes[(int)((uint)StringComparer.Ordinal.GetHashCode(path) % (uint)Stripes.Length)];
+    private static object Stripe(string path) => Stripes[(int)((uint)StringComparer.OrdinalIgnoreCase.GetHashCode(path) % (uint)Stripes.Length)];
 
     private Answer Listing(string? path, int depth, CancellationToken cancellationToken)
     {
@@ -332,6 +357,11 @@ public sealed class Files(SessionRoots roots, ServerConfig config, IWorkingCopy 
             return Answer.Failed("name the text to search for");
         }
 
+        if (query.Contains('\n', StringComparison.Ordinal))
+        {
+            return Answer.Failed("search_text matches within one line, and this text spans several", "search for one line of it, then read_file around the match");
+        }
+
         Glob? glob = pattern is { Length: > 0 } given ? Glob.Of(given.Trim()) : null;
         var matches = new List<TextMatch>();
         var unread = new List<string>();
@@ -388,11 +418,8 @@ public sealed class Files(SessionRoots roots, ServerConfig config, IWorkingCopy 
         return Answer.Failed(reached.Error!, reached.Hint);
     }
 
-    /// <summary>The path as the caller should name it again: relative to its root where it has one.</summary>
-    private string Shown(string full) =>
-        roots.All.FirstOrDefault(root => full.StartsWith(root, StringComparison.Ordinal)) is { } root
-            ? Path.GetRelativePath(root, full)
-            : full;
+    /// <summary>The path as the caller should name it again.</summary>
+    private string Shown(string full) => roots.Relative(full);
 
     /// <summary>Searches one file and says whether it could; its matches are added as they are found.</summary>
     /// <remarks>
@@ -418,7 +445,7 @@ public sealed class Files(SessionRoots roots, ServerConfig config, IWorkingCopy 
 
             int at = 0;
 
-            foreach (string line in disk.Lines(file))
+            foreach (string line in disk.Lines(file, int.MaxValue))
             {
                 at++;
 

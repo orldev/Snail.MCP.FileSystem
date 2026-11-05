@@ -23,21 +23,23 @@ public static class McpServerHost
 
     /// <summary>The server answering sessions at <see cref="ServerConfig.Port"/>; a port of zero takes any free one.</summary>
     /// <remarks>
-    /// Bound on every interface because the callers are the workers of the machine, each in its own
-    /// container: a server on loopback would be reachable from nothing but itself. A request that carries an
-    /// <c>Origin</c> is refused, as Snail.Sdk.Mcp.Http refuses it: a page in a browser always sends one, an
-    /// agent's client never does.
+    /// On loopback, unless <see cref="ServerConfig.ListensOnEveryInterface"/> asks for every interface: in the image the callers are
+    /// the workers of the machine, each in its own container, and the published port is the boundary. The host is
+    /// Snail.Sdk.Mcp.Http's in both shapes — its log lines on stderr, a request a line only on warnings, the idle trim —
+    /// and a request that carries an <c>Origin</c> is refused: a page in a browser always sends one, an agent's client
+    /// never does.
     /// </remarks>
     internal static WebApplication Listening(string[] args, ServerConfig config)
     {
-        WebApplicationBuilder builder = WebApplication.CreateSlimBuilder(args);
+        WebApplicationBuilder builder = config.ListensOnEveryInterface
+            ? McpHttpHost.CreateContainerBuilder(args, config.Port)
+            : McpHttpHost.CreateBuilder(args, new Uri($"http://127.0.0.1:{config.Port}"));
 
         builder.Configuration.AddServerSettings(ServerConfigExtensions.Server);
         builder.ConfigureMcpServerAtAnAddress(config);
 
         WebApplication app = builder.Build();
 
-        app.Urls.Add($"http://*:{config.Port}");
         app.RefuseASessionItCannotServe();
         app.MapLocalMcp(Path);
 

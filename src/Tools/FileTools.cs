@@ -16,8 +16,9 @@ public sealed class FileTools(Files files)
     public CallToolResult Read(
         [Description(ToolDescriptions.Path)] string path,
         [Description(ToolDescriptions.ReadFrom)] int? from = null,
-        [Description(ToolDescriptions.ReadTo)] int? to = null) =>
-        ToolResponse.From(files.Read(path, from, to));
+        [Description(ToolDescriptions.ReadTo)] int? to = null,
+        CancellationToken cancellationToken = default) =>
+        ToolResponse.From(files.Read(path, from, to, cancellationToken));
 
     /// <summary>A file written whole.</summary>
     [McpServerTool(Name = "write_file", Destructive = true, OpenWorld = false)]

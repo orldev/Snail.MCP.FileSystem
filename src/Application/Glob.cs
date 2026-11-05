@@ -9,6 +9,9 @@ namespace Snail.MCP.FileSystem.Application;
 /// matches when its whole relative form does or its file name alone does, so <c>*.cs</c> finds a file in any folder.
 /// <c>**/</c> is any number of whole folders: written as <c>.*</c> with the slash swallowed, <c>**/Tests/*.cs</c> also
 /// matched <c>UnitTests/</c>.
+/// A match gives up after 100 ms, and the call answers that the pattern takes too long: a pattern of fifteen stars against
+/// a name of 64 letters backtracked past the two seconds it once had. Matched without backtracking instead, the automaton
+/// built for every call took find_files from 131.73 KB to 414.23 KB.
 /// </remarks>
 internal sealed class Glob
 {
@@ -44,7 +47,9 @@ internal sealed class Glob
 
         expression.Append('$');
 
-        return new Glob(new Regex(expression.ToString(), RegexOptions.CultureInvariant, TimeSpan.FromSeconds(2)));
+        var matcher = new Regex(expression.ToString(), RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(100));
+
+        return new Glob(matcher);
     }
 
     /// <summary>Whether a path relative to the folder walked matches, as a whole or by its file name.</summary>

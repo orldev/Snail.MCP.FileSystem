@@ -23,6 +23,14 @@ public sealed class ServerConfig
     /// </remarks>
     public int Port { get; set; }
 
+    /// <summary>Whether the port is opened on every interface rather than on loopback alone; the container image turns it on.</summary>
+    /// <remarks>
+    /// Off by default. On every interface there is no credential to ask for: the only refusal is of a request carrying
+    /// <c>Origin</c>. In a container the published port is the boundary; a port given on a developer's machine served the
+    /// roots, writable by default, to the whole network.
+    /// </remarks>
+    public bool ListensOnEveryInterface { get; set; }
+
     /// <summary>Whether writing exists at all; a role that only reads is given a server that only reads.</summary>
     public bool AllowWrite { get; set; } = true;
 

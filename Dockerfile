@@ -1,7 +1,7 @@
 # The server as a container: one per machine, standing behind every agent on it.
 #
 #   docker build --build-context feed=../../nuget -t snail/s3l-filesystem-mcp .
-#   docker run -p 8820:8820 -e SNAIL_MCP_FILESYSTEM_PORT=8820 -v workspaces:/workspaces snail/s3l-filesystem-mcp
+#   docker run -p 127.0.0.1:8820:8820 -v workspaces:/workspaces snail/s3l-filesystem-mcp
 #
 # The volume is the point. This server answers about files, so it must run where the files are: the
 # working copies of the machine are mounted here, and each session names the one it works in through
@@ -53,7 +53,10 @@ WORKDIR /app
 COPY --from=build /app .
 RUN mkdir /workspaces && chown app:app /workspaces
 
+# A container's published port does not reach its loopback, so the image opens the port on every interface; the endpoint
+# asks for no credential, so the published port is the boundary: publish it where only the agents reach it.
 ENV SNAIL_MCP_FILESYSTEM_PORT=8820
+ENV SNAIL_MCP_FILESYSTEM_LISTENS_ON_EVERY_INTERFACE=true
 ENV SNAIL_MCP_FILESYSTEM_ROOTS__0=/workspaces
 EXPOSE 8820
 

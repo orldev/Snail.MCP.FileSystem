@@ -18,8 +18,8 @@ public interface IWorkingCopy
     /// <summary>The length of the file at the path, in bytes.</summary>
     long Length(string path);
 
-    /// <summary>The lines of a file, read as they are asked for.</summary>
-    IEnumerable<string> Lines(string path);
+    /// <summary>The lines of a file, read as they are asked for, each kept to <paramref name="longest"/> characters.</summary>
+    IEnumerable<string> Lines(string path, int longest);
 
     /// <summary>The bytes of a file.</summary>
     byte[] Bytes(string path);

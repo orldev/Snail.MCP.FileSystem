@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using Snail.MCP.FileSystem.Application;
+using Snail.MCP.FileSystem.Tools;
 
 namespace Snail.MCP.FileSystem.Extensions;
 
@@ -27,6 +28,7 @@ public static class GrantRegistrationExtensions
     }
 
     /// <summary>The call handed on when the session was granted the tool, a refusal naming the grant otherwise.</summary>
+    /// <remarks>The refusal is written as every answer of the server is: written as a bare sentence, it was the one answer of another shape.</remarks>
     private static McpRequestHandler<CallToolRequestParams, CallToolResult> Refusing(McpRequestHandler<CallToolRequestParams, CallToolResult> next) =>
         async (context, cancellationToken) =>
         {
@@ -37,12 +39,8 @@ public static class GrantRegistrationExtensions
                 return await next(context, cancellationToken);
             }
 
-            var refusal = new CallToolResult
-            {
-                IsError = true,
-                Content = [new TextContentBlock { Text = grant.Refusal(name) }]
-            };
+            Answer refusal = Answer.Failed(grant.Refusal(name), "call only the tools this session was given; find_tool lists them");
 
-            return refusal;
+            return ToolResponse.From(refusal);
         };
 }
