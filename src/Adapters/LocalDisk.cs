@@ -24,7 +24,7 @@ public sealed class LocalDisk : IWorkingCopy
     public bool IsFolder(string path) => Directory.Exists(path);
 
     /// <inheritdoc/>
-    public long Length(string path) => new FileInfo(path).Length;
+    public long Length(string path) => OperatingSystem.IsWindows() ? new FileInfo(path).Length : LinklessDisk.Length(path);
 
     /// <inheritdoc/>
     /// <remarks>
@@ -102,6 +102,11 @@ public sealed class LocalDisk : IWorkingCopy
     /// </remarks>
     public Contents Contents(string folder)
     {
+        if (!OperatingSystem.IsWindows())
+        {
+            return LinklessDisk.Contents(folder);
+        }
+
         string[] files = [.. Directory.EnumerateFiles(folder, "*", Walking)];
         string[] folders = [.. Directory.EnumerateDirectories(folder, "*", Walking)];
 

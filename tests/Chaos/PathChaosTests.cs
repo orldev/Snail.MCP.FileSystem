@@ -100,6 +100,107 @@ public sealed class PathChaosTests
     }
 
     /// <summary>
+    /// <c>list_directory</c> enumerated each folder by name, and a folder swapped for a link out of the copy between the
+    /// check and the enumeration named the files outside the session, and their sizes.
+    /// </summary>
+    [Fact]
+    [UnsupportedOSPlatform("windows")]
+    public async Task List_FolderSwappedForALinkDuringTheCall_NeverNamesAFileOutside()
+    {
+        using var copy = new Copy();
+        string outside = TestFolder.Create();
+        await File.WriteAllTextAsync(Path.Combine(outside, "secret-of-another-task.txt"), "secret");
+        copy.Write("real/notes.txt", "own notes");
+        string shown = "";
+
+        int attempts = await RacedAsync(copy, outside, () =>
+        {
+            Answer answer = copy.Files.List(null, 2);
+            shown = answer.Data?.ToJsonString() ?? "";
+
+            return shown.Contains("secret-of-another-task", StringComparison.Ordinal);
+        });
+
+        Assert.False(shown.Contains("secret-of-another-task", StringComparison.Ordinal), $"list_directory named a file outside the session after {attempts} listings");
+    }
+
+    /// <summary><c>find_files</c> walks the same way and named the files outside the session the same way.</summary>
+    [Fact]
+    [UnsupportedOSPlatform("windows")]
+    public async Task Find_FolderSwappedForALinkDuringTheCall_NeverNamesAFileOutside()
+    {
+        using var copy = new Copy();
+        string outside = TestFolder.Create();
+        await File.WriteAllTextAsync(Path.Combine(outside, "secret-of-another-task.txt"), "secret");
+        copy.Write("real/notes.txt", "own notes");
+        string shown = "";
+
+        int attempts = await RacedAsync(copy, outside, () =>
+        {
+            Answer answer = copy.Files.Find("**/*.txt", null);
+            shown = answer.Data?.ToJsonString() ?? "";
+
+            return shown.Contains("secret-of-another-task", StringComparison.Ordinal);
+        });
+
+        Assert.False(shown.Contains("secret-of-another-task", StringComparison.Ordinal), $"find_files named a file outside the session after {attempts} searches");
+    }
+
+    /// <summary>
+    /// A Linux without <c>openat2</c> — an old kernel, gVisor, an amd64 image under Rosetta — refused every read and write:
+    /// the image built for amd64 answered <c>write_file</c> with "Function not implemented". There the path is opened one
+    /// folder at a time, which must still write and read, and still never through a link swapped in.
+    /// </summary>
+    [Fact]
+    [UnsupportedOSPlatform("windows")]
+    public void Write_OnASystemWithoutOpenat2_WritesEditsAndReads()
+    {
+        using var copy = new Copy();
+
+        Answer[] answers = FolderByFolder<Answer[]>(() =>
+        [
+            copy.Files.Write("made/deeper/notes.txt", "own notes"),
+            copy.Files.Edit("made/deeper/notes.txt", "own", "edited", all: false),
+            copy.Files.Read("made/deeper/notes.txt", null, null)
+        ]);
+
+        Assert.All(answers, answer => Assert.True(answer.IsSuccess, answer.Error));
+        Assert.Contains("edited notes", answers[2].Data!["text"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    /// <summary>Opened one folder at a time, a folder swapped for a link out of the copy is refused as <c>openat2</c> refuses it.</summary>
+    [Fact]
+    [UnsupportedOSPlatform("windows")]
+    public async Task Write_FolderSwappedForALinkOnASystemWithoutOpenat2_NeverLandsOutside()
+    {
+        using var copy = new Copy();
+        string outside = TestFolder.Create();
+
+        int attempts = await RacedAsync(copy, outside, () =>
+        {
+            FolderByFolder(() => copy.Files.Write("real/x.txt", "escaped"));
+
+            return Directory.GetFileSystemEntries(outside).Length > 0;
+        });
+
+        Assert.True(Directory.GetFileSystemEntries(outside).Length == 0,
+            $"after {attempts} writes the server wrote {string.Join(", ", Directory.GetFileSystemEntries(outside).Select(Path.GetFileName))} outside the session");
+    }
+
+    /// <summary>A file read through a link on a system without <c>openat2</c> is refused, not read.</summary>
+    [Fact]
+    [UnsupportedOSPlatform("windows")]
+    public void Read_FolderThatIsALinkOnASystemWithoutOpenat2_IsRefused()
+    {
+        using var copy = new Copy();
+        string outside = TestFolder.Create();
+        File.WriteAllText(Path.Combine(outside, "notes.txt"), "secret of another task");
+        Directory.CreateSymbolicLink(Path.Combine(copy.Root, "real"), outside);
+
+        Assert.ThrowsAny<IOException>(() => FolderByFolder(() => copy.Disk.Bytes(Path.Combine(Real(copy.Root), "real", "notes.txt"))));
+    }
+
+    /// <summary>
     /// An answer names a path relative to the session's root, so the model can hand it back. The comparison was made
     /// against the root as configured, the path against the root with its links resolved: a root that is a link — a home
     /// folder on another volume, <c>/tmp</c> and <c>/var</c> on macOS, a mounted workspace — made every answer name the
@@ -165,6 +266,23 @@ public sealed class PathChaosTests
 
         int left = (await File.ReadAllLinesAsync(path)).Count(line => line.StartsWith("slot", StringComparison.Ordinal));
         Assert.True(left == 0, $"{left} of {slots} edits are gone, and every caller heard ok");
+    }
+
+    /// <summary>Runs a step with paths opened one folder at a time, as on a Linux without <c>openat2</c>.</summary>
+    /// <remarks>The switch is shared by every test running at once; both ways refuse the same paths, so none of them notices.</remarks>
+    [UnsupportedOSPlatform("windows")]
+    private static T FolderByFolder<T>(Func<T> step)
+    {
+        Adapters.LinklessDisk.WalksFolderByFolder = true;
+
+        try
+        {
+            return step();
+        }
+        finally
+        {
+            Adapters.LinklessDisk.WalksFolderByFolder = false;
+        }
     }
 
     /// <summary>Calls the server for five seconds, or until a call reports it reached outside, while the folder <c>real</c> keeps turning into a link out of the copy and back.</summary>
