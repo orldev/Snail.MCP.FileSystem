@@ -54,6 +54,9 @@ public static class ServiceCollectionExtensions
             builder.Services.AddSingleton<IWorkingCopy, LocalDisk>();
             builder.Services.AddSingleton<SessionRoots>();
             builder.Services.AddSingleton<SessionGrant>();
+            builder.Services.AddSingleton<CopyReader>();
+            builder.Services.AddSingleton<CopyWriter>();
+            builder.Services.AddSingleton<CopyWalker>();
             builder.Services.AddSingleton<Files>();
             builder.Services.AddSingleton<ToolIndex>();
 

@@ -137,6 +137,14 @@ public sealed class SessionRoots(ServerConfig config, ISessionAddress address, I
         return IsUnder(full, first) ? Path.GetRelativePath(first, full) : full;
     }
 
+    /// <summary>Why a path may not be used, as the answer that says so.</summary>
+    public Answer Refusal(string? path)
+    {
+        Reached reached = Reach(path);
+
+        return Answer.Failed(reached.Error!, reached.Hint);
+    }
+
     private static bool IsUnder(string path, string root) =>
         string.Equals(path, root, StringComparison.Ordinal)
         || path.StartsWith($"{root.TrimEnd(Path.DirectorySeparatorChar)}{Path.DirectorySeparatorChar}", StringComparison.Ordinal);

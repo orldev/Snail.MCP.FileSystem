@@ -15,7 +15,7 @@ public sealed class Copy : IDisposable
 
         Disk = disk ?? new LocalDisk();
         Roots = new SessionRoots(Config, new Nowhere(), Disk);
-        Files = new Files(Roots, Config, Disk);
+        Files = Files.Of(Roots, Config, Disk, Journal);
     }
 
     public string Root { get; }
@@ -28,12 +28,15 @@ public sealed class Copy : IDisposable
 
     public IWorkingCopy Disk { get; }
 
+    /// <summary>The journal of the changes this copy's files went through.</summary>
+    public Journal<CopyWriter> Journal { get; } = new();
+
     /// <summary>The file tools of a session opened at an address, over the machine's own disk.</summary>
     public static Files At(ServerConfig config, ISessionAddress address)
     {
         var disk = new LocalDisk();
 
-        return new Files(new SessionRoots(config, address, disk), config, disk);
+        return Files.Of(new SessionRoots(config, address, disk), config, disk);
     }
 
     /// <summary>Puts a file in the copy and answers with its full path.</summary>

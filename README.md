@@ -16,6 +16,13 @@ name merely begins the same way is not mistaken for one inside, and **resolving 
 path** so that a symlink in the middle of it cannot lead out. A server given no root serves nothing
 rather than serving the disk.
 
+**A link swapped in after the check leads nowhere.** The path is checked with its links resolved, and the file is
+then opened through its folder with no link allowed anywhere on the folder's path — `O_NOFOLLOW_ANY` on macOS,
+`openat2` with `RESOLVE_NO_SYMLINKS` on Linux — and made, renamed and read relative to that open folder. Whatever else
+writes the copy — a shell, a build — cannot turn a folder into a link between the check and the use and carry a read
+or a write out of the session; it gets a refusal. A listing still walks folders by name: while a folder is being
+swapped it may name what lies behind the link, but never reads it.
+
 **The roots are per session, not per process.** A session opened at `…/mcp?root=/path/to/copy` is served
 that path and nothing else, which is what lets one server stand behind several agents without any of
 them reaching another's working copy; repeat `root` for more than one. `SNAIL_MCP_FILESYSTEM_ROOTS__0`
@@ -88,9 +95,20 @@ the first that exists of the chain every Snail MCP server reads ([Snail.Sdk](htt
 **`edit_file` replaces exact text, not a line range.** A line number is stale the moment anything above
 it changes. A replacement that matches nothing is refused rather than written, and one that matches
 twice is refused until `all` is passed: a replacement the caller did not mean is worse than none. Only the
-replaced text changes: a file keeps its encoding, its byte order mark and its line ends, and the `\n` of a
-replacement is written as the file writes its line ends. A file is replaced in one step, so a reader never
-sees it half written, and two edits of one file at once both land.
+replaced text changes: a file keeps its encoding — UTF-8, the UTF-16 or UTF-32 its byte order mark names, or any other
+byte for byte — its byte order mark and its line ends, and the `\n` of a replacement is written with the line ends of
+the text it replaces. A file is replaced in one step, so a reader never sees it half written, and two edits of one file
+at once both land, however its name is cased. A file larger than `SNAIL_MCP_FILESYSTEM_MAX_FILE_BYTES` is not edited:
+write it whole.
+
+**Answers name paths you can hand back.** A path is named relative to the session's first root, which is where a
+relative path is reached from, and whole when it lies under another root.
+
+**`search_text` matches within one line.** A query with a line end in it is refused, rather than answered as if the
+text were absent.
+
+**Every change is journaled.** `write_file` and `edit_file` write a line to the log — standard error — with the file's
+full path, which names the copy it is in, its size, and whether it was created or how many replacements were made.
 
 **The walks stay in the copy.** `list_directory`, `find_files` and `search_text` follow no link, pass a
 folder they may not open, and name in the answer what they could not read, so an empty answer is never

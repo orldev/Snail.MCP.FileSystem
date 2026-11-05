@@ -84,7 +84,7 @@ Writes a file whole, creating the folders above it. Overwrites without asking: r
 
 ## <code>edit_<wbr>file</code>
 
-Replaces exact text in a file; nothing else in it changes, its encoding and line ends included. Refuses when the text is not there, and when it is there more than once without 'all'.
+Replaces exact text in a file; nothing else in it changes, its encoding and line ends included. Refuses when the text is not there, when it is there more than once without 'all', and when the file is too large to read whole: write such a file with write_file.
 
 *may overwrite or delete · every call adds · stays on this machine.*
 
@@ -211,7 +211,7 @@ Names the lines that contain a text, with the file and the line number of each. 
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `query` | `string` | yes | — | The text to look for, matched exactly. |
+| `query` | `string` | yes | — | The text to look for, matched exactly within one line. |
 | `path` | `string?` | — | `null` | Folder to work in; omit for the session's root. |
 | `pattern` | `string?` | — | `null` | Only search files whose path matches this glob. |
 
@@ -222,7 +222,7 @@ Names the lines that contain a text, with the file and the line number of each. 
   "type": "object",
   "properties": {
     "query": {
-      "description": "The text to look for, matched exactly.",
+      "description": "The text to look for, matched exactly within one line.",
       "type": "string"
     },
     "path": {

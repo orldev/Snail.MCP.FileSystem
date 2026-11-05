@@ -64,7 +64,7 @@
   },
   {
     "name": "edit_file",
-    "description": "Replaces exact text in a file; nothing else in it changes, its encoding and line ends included. Refuses when the text is not there, and when it is there more than once without \u0027all\u0027.",
+    "description": "Replaces exact text in a file; nothing else in it changes, its encoding and line ends included. Refuses when the text is not there, when it is there more than once without \u0027all\u0027, and when the file is too large to read whole: write such a file with write_file.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -161,7 +161,7 @@
       "type": "object",
       "properties": {
         "query": {
-          "description": "The text to look for, matched exactly.",
+          "description": "The text to look for, matched exactly within one line.",
           "type": "string"
         },
         "path": {

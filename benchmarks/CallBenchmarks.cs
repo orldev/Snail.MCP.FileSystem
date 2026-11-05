@@ -41,7 +41,7 @@ public class CallBenchmarks
 
         var config = new ServerConfig { Roots = [_root] };
         var disk = new LocalDisk();
-        _files = new Files(new SessionRoots(config, new NoAddress(), disk), config, disk);
+        _files = Files.Of(new SessionRoots(config, new NoAddress(), disk), config, disk);
     }
 
     /// <summary>A new folder named as Snail.Sdk.Mcp.Testing names a test's, so a cleaner can prove a crashed run's is a leftover.</summary>

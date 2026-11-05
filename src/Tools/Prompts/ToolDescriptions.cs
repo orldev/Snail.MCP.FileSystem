@@ -28,7 +28,8 @@ public static class ToolDescriptions
     /// <summary>What <c>edit_file</c> does.</summary>
     public const string Edit =
         "Replaces exact text in a file; nothing else in it changes, its encoding and line ends included. Refuses when "
-        + "the text is not there, and when it is there more than once without 'all'.";
+        + "the text is not there, when it is there more than once without 'all', and when the file is too large to read "
+        + "whole: write such a file with write_file.";
 
     /// <summary>The <c>find</c> parameter of <c>edit_file</c>.</summary>
     public const string EditFind = "The exact text to replace, with its indentation; a line end may be written as \\n.";
@@ -62,7 +63,7 @@ public static class ToolDescriptions
         + "Names the files it could not search.";
 
     /// <summary>The <c>query</c> parameter of <c>search_text</c>.</summary>
-    public const string SearchQuery = "The text to look for, matched exactly.";
+    public const string SearchQuery = "The text to look for, matched exactly within one line.";
 
     /// <summary>The <c>pattern</c> parameter of <c>search_text</c>.</summary>
     public const string SearchPattern = "Only search files whose path matches this glob.";
