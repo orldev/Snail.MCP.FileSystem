@@ -1,6 +1,6 @@
 # The server as a container: one per machine, standing behind every agent on it.
 #
-#   docker build --build-context feed=../../nuget -t snail/s3l-filesystem-mcp .
+#   docker build -t snail/s3l-filesystem-mcp .
 #   docker run -p 127.0.0.1:8820:8820 -v workspaces:/workspaces snail/s3l-filesystem-mcp
 #
 # The volume is the point. This server answers about files, so it must run where the files are: the
@@ -15,8 +15,7 @@
 # so the stand runs this image with user "0:0" — as app it would read a task's files and refuse to change them.
 #
 # The SDK is pinned to the band global.json asks for: on the floating sdk:10.0 a newer feature band would one day
-# refuse the build. Snail.Sdk is taken from the author's local feed for now: the build takes it as a build context named
-# feed, and restore finds it under the name nuget.config maps Snail.Sdk to.
+# refuse the build.
 #
 # The server is native: the SDK compiles it ahead of time (Native AOT), which needs clang and zlib in the build stage,
 # and the image runs the one executable on runtime-deps, with no .NET runtime in it — a smaller image and a faster
@@ -34,8 +33,6 @@ RUN apt-get update \
     && apt-get install --yes --no-install-recommends clang zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 WORKDIR /source
-COPY --from=feed . /feed
-RUN dotnet nuget add source /feed --name LocalPackages
 COPY . .
 RUN case "$TARGETARCH" in amd64|"") rid=linux-x64 ;; *) rid="linux-$TARGETARCH" ;; esac \
     && dotnet publish src/Snail.MCP.FileSystem.csproj -c Release -r "$rid" -o /app -p:Version=$VERSION
