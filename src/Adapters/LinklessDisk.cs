@@ -1,6 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using Microsoft.Win32.SafeHandles;
+
+[assembly: DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
 
 namespace Snail.MCP.FileSystem.Adapters;
 
@@ -14,7 +17,7 @@ namespace Snail.MCP.FileSystem.Adapters;
 /// changed, whatever the path says by then. A link swapped in is a refusal, never a write somewhere else.
 /// </remarks>
 [UnsupportedOSPlatform("windows")]
-internal static class LinklessDisk
+internal static partial class LinklessDisk
 {
     private const int WriteOnly = 0x1;
     private const int AlreadyThere = 17;
@@ -88,13 +91,25 @@ internal static class LinklessDisk
 
     /// <summary>A file opened for reading by one call that refuses a link anywhere on its path.</summary>
     /// <remarks>Opening a named pipe waits for a writer; the callers do not open a file of no bytes.</remarks>
+    [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "The handle is owned by the stream returned, and disposed here when the stream cannot be made.")]
     public static FileStream Reading(string path)
     {
         int file = OperatingSystem.IsMacOS()
             ? Open(path, Machine.CloseOnExec | Machine.NoFollowAnywhere)
             : OpenWithoutLinks(path, Machine.CloseOnExec);
 
-        return new FileStream(Opened(file, path), FileAccess.Read);
+        SafeFileHandle handle = Opened(file, path);
+
+        try
+        {
+            return new FileStream(handle, FileAccess.Read);
+        }
+        catch
+        {
+            handle.Dispose();
+
+            throw;
+        }
     }
 
     /// <summary>A folder opened by one call that refuses a link anywhere on its path.</summary>
@@ -186,27 +201,27 @@ internal static class LinklessDisk
         }
     }
 
-    [DllImport("libc", EntryPoint = "open", SetLastError = true)]
-    private static extern int Open([MarshalAs(UnmanagedType.LPUTF8Str)] string path, int flags);
+    [LibraryImport("libc", EntryPoint = "open", StringMarshalling = StringMarshalling.Utf8, SetLastError = true)]
+    private static partial int Open(string path, int flags);
 
-    [DllImport("libc", EntryPoint = "openat", SetLastError = true)]
-    private static extern int OpenAt(SafeFileHandle folder, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, int flags, int mode);
+    [LibraryImport("libc", EntryPoint = "openat", StringMarshalling = StringMarshalling.Utf8, SetLastError = true)]
+    private static partial int OpenAt(SafeFileHandle folder, string name, int flags, int mode);
 
-    [DllImport("libc", EntryPoint = "syscall", SetLastError = true)]
-    private static extern long Syscall(long number, int folder, [MarshalAs(UnmanagedType.LPUTF8Str)] string path, ref OpenHow how, nuint size);
+    [LibraryImport("libc", EntryPoint = "syscall", StringMarshalling = StringMarshalling.Utf8, SetLastError = true)]
+    private static partial long Syscall(long number, int folder, string path, ref OpenHow how, nuint size);
 
-    [DllImport("libc", EntryPoint = "renameat", SetLastError = true)]
-    private static extern int RenameAt(SafeFileHandle fromFolder, [MarshalAs(UnmanagedType.LPUTF8Str)] string from, SafeFileHandle toFolder, [MarshalAs(UnmanagedType.LPUTF8Str)] string to);
+    [LibraryImport("libc", EntryPoint = "renameat", StringMarshalling = StringMarshalling.Utf8, SetLastError = true)]
+    private static partial int RenameAt(SafeFileHandle fromFolder, string from, SafeFileHandle toFolder, string to);
 
-    [DllImport("libc", EntryPoint = "unlinkat", SetLastError = true)]
-    private static extern int UnlinkAt(SafeFileHandle folder, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, int flags);
+    [LibraryImport("libc", EntryPoint = "unlinkat", StringMarshalling = StringMarshalling.Utf8, SetLastError = true)]
+    private static partial int UnlinkAt(SafeFileHandle folder, string name, int flags);
 
-    [DllImport("libc", EntryPoint = "mkdirat", SetLastError = true)]
-    private static extern int MakeAt(SafeFileHandle folder, [MarshalAs(UnmanagedType.LPUTF8Str)] string name, int mode);
+    [LibraryImport("libc", EntryPoint = "mkdirat", StringMarshalling = StringMarshalling.Utf8, SetLastError = true)]
+    private static partial int MakeAt(SafeFileHandle folder, string name, int mode);
 
-    [DllImport("libc", EntryPoint = "fchmod", SetLastError = true)]
-    private static extern int Chmod(SafeFileHandle file, int mode);
+    [LibraryImport("libc", EntryPoint = "fchmod", SetLastError = true)]
+    private static partial int Chmod(SafeFileHandle file, int mode);
 
-    [DllImport("libc", EntryPoint = "umask")]
-    private static extern int SetUmask(int mask);
+    [LibraryImport("libc", EntryPoint = "umask")]
+    private static partial int SetUmask(int mask);
 }

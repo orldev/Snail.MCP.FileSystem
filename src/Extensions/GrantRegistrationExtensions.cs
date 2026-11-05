@@ -39,7 +39,7 @@ public static class GrantRegistrationExtensions
                 return await next(context, cancellationToken);
             }
 
-            Answer refusal = Answer.Failed(grant.Refusal(name), "call only the tools this session was given; find_tool lists them");
+            var refusal = Answer.Failed(grant.Refusal(name), "call only the tools this session was given; find_tool lists them");
 
             return ToolResponse.From(refusal);
         };

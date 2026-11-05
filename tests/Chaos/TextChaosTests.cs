@@ -56,7 +56,7 @@ public sealed class TextChaosTests
     public void Edit_FileWithAByteOrderMarkOfAnotherEncoding_ReplacesTheTextReadFileShows(string name)
     {
         using var copy = new Copy();
-        Encoding encoding = Encoding.GetEncoding(name);
+        var encoding = Encoding.GetEncoding(name);
         string path = copy.Write("resource.rc", string.Empty);
         File.WriteAllText(path, "caption = \"hello\"\n", encoding);
 

@@ -175,7 +175,7 @@ public sealed class PathChaosTests
         Directory.CreateDirectory(folder);
 
         using var stop = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        Task swapping = Task.Run(() => Swap(folder, parked, outside, stop.Token));
+        var swapping = Task.Run(() => Swap(folder, parked, outside, stop.Token));
         int attempts = 0;
         bool isOutside = false;
 
