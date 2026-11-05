@@ -30,7 +30,7 @@ public sealed class SequenceTools(IEnumerable<McpServerTool> tools, SessionGrant
     private const string Name = "run_tools";
 
     /// <summary>Several tools of this server in one call, in order, stopping at the first failure.</summary>
-    [McpServerTool(Name = Name, Destructive = true)]
+    [McpServerTool(Name = Name, Destructive = true, UseStructuredContent = true, OutputSchemaType = typeof(StepsRun))]
     [Description(ToolDescriptions.RunTools)]
     public async Task<CallToolResult> RunToolsAsync(
         RequestContext<CallToolRequestParams> context,

@@ -50,3 +50,93 @@ Runs several of this server's tools in one call, in order, stopping at the first
 
 </details>
 
+<details><summary>Output schema</summary>
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "ok": {
+      "description": "Whether every step ran and went through.",
+      "type": "boolean"
+    },
+    "ran": {
+      "description": "How many steps ran.",
+      "type": "integer"
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "tool": {
+            "description": "The tool the step called.",
+            "type": "string"
+          },
+          "ok": {
+            "description": "Whether the step went through.",
+            "type": "boolean"
+          },
+          "data": {
+            "default": null
+          },
+          "error": {
+            "description": "The tool\u0027s refusal; absent when it went through.",
+            "type": [
+              "string",
+              "null"
+            ],
+            "default": null
+          },
+          "isOmitted": {
+            "description": "Whether the answer was left out to stay inside the output budget; absent when it was not.",
+            "type": "boolean",
+            "default": false
+          }
+        },
+        "required": [
+          "tool",
+          "ok"
+        ]
+      }
+    },
+    "omitted": {
+      "description": "How many answers were left out to stay inside the output budget.",
+      "type": "integer"
+    },
+    "note": {
+      "description": "Why answers were left out; null when none were.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "error": {
+      "description": "Why the run stopped; null when every step went through.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "hint": {
+      "description": "What to do about it; null when there is nothing to do.",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "ok",
+    "ran",
+    "steps",
+    "omitted",
+    "note",
+    "error",
+    "hint"
+  ]
+}
+```
+
+</details>
+

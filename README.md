@@ -18,10 +18,10 @@ rather than serving the disk.
 
 **A link swapped in after the check leads nowhere.** The path is checked with its links resolved, and the file is
 then opened through its folder with no link allowed anywhere on the folder's path — `O_NOFOLLOW_ANY` on macOS,
-`openat2` with `RESOLVE_NO_SYMLINKS` on Linux — and made, renamed and read relative to that open folder. Whatever else
-writes the copy — a shell, a build — cannot turn a folder into a link between the check and the use and carry a read
-or a write out of the session; it gets a refusal. A listing still walks folders by name: while a folder is being
-swapped it may name what lies behind the link, but never reads it.
+`openat2` with `RESOLVE_NO_SYMLINKS` on Linux, and on a Linux without `openat2` (a kernel before 5.6, gVisor, an amd64
+image under emulation) one folder at a time from `/`, none of them a link — and made, renamed, read, listed and sized
+relative to that open folder. Whatever else writes the copy — a shell, a build — cannot turn a folder into a link
+between the check and the use and carry a read, a write or a listing out of the session; it gets a refusal.
 
 **The roots are per session, not per process.** A session opened at `…/mcp?root=/path/to/copy` is served
 that path and nothing else, which is what lets one server stand behind several agents without any of
@@ -125,3 +125,7 @@ whether it calls them itself or as steps of `run_tools`; and `run_tools` does no
 
 A refusal is data, not a failed call: `ok` is false, `error` says what happened and `hint` says what to
 do about it. The same shape either way, because a model reads the shape it saw last.
+
+Every tool lists the shape of what it answers as its `outputSchema`, and an answer that went through carries the
+same object again as `structuredContent`, for a client that validates it or calls the tool typed. A refusal is an
+error result in text alone. The shapes are in the [tool reference](docs/reference/tools/index.md).

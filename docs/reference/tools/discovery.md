@@ -35,3 +35,89 @@ Names the tools that answer a task described in words, with the parameters each 
 
 </details>
 
+<details><summary>Output schema</summary>
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "task": {
+      "description": "The task as asked.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "isMatched": {
+      "description": "Whether any tool matched; when none did, every tool is listed.",
+      "type": "boolean"
+    },
+    "note": {
+      "description": "Why every tool is listed; null when some matched.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "tools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "parameters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "type": {
+                  "description": "The JSON type of the value.",
+                  "type": "string"
+                },
+                "isRequired": {
+                  "description": "Whether the call must give it.",
+                  "type": "boolean"
+                },
+                "description": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "name",
+                "type",
+                "isRequired",
+                "description"
+              ]
+            }
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "parameters"
+        ]
+      }
+    }
+  },
+  "required": [
+    "task",
+    "isMatched",
+    "note",
+    "tools"
+  ]
+}
+```
+
+</details>
+

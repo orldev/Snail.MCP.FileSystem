@@ -47,6 +47,82 @@ Reads a file as text, whole or by lines. Says how many lines it has and whether 
 
 </details>
 
+<details><summary>Output schema</summary>
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "ok": {
+      "description": "true: the call did what was asked. A refusal comes as an error result with ok false, error and hint.",
+      "type": "boolean"
+    },
+    "data": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "path": {
+          "description": "The file, relative to the session\u0027s root.",
+          "type": "string"
+        },
+        "from": {
+          "description": "The first line given, counted from 1.",
+          "type": "integer"
+        },
+        "to": {
+          "description": "The last line given.",
+          "type": "integer"
+        },
+        "lines": {
+          "description": "How many lines the file has.",
+          "type": "integer"
+        },
+        "text": {
+          "description": "The lines from..to, joined by line ends.",
+          "type": "string"
+        },
+        "isCut": {
+          "description": "Whether the text was cut at the server\u0027s output limit; read on from the line after the last one shown.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "path",
+        "from",
+        "to",
+        "lines",
+        "text",
+        "isCut"
+      ]
+    },
+    "error": {
+      "description": "Always null here: a refusal is an error result.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "hint": {
+      "description": "Always null here: a refusal is an error result.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "ok",
+    "data"
+  ]
+}
+```
+
+</details>
+
 ## <code>write_<wbr>file</code>
 
 Writes a file whole, creating the folders above it. Overwrites without asking: read it first, or use edit_file to change a part.
@@ -76,6 +152,67 @@ Writes a file whole, creating the folders above it. Overwrites without asking: r
   "required": [
     "path",
     "text"
+  ]
+}
+```
+
+</details>
+
+<details><summary>Output schema</summary>
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "ok": {
+      "description": "true: the call did what was asked. A refusal comes as an error result with ok false, error and hint.",
+      "type": "boolean"
+    },
+    "data": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "path": {
+          "description": "The file, relative to the session\u0027s root.",
+          "type": "string"
+        },
+        "isCreated": {
+          "description": "Whether the file was not there before.",
+          "type": "boolean"
+        },
+        "bytes": {
+          "description": "The length of the file now, in bytes.",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path",
+        "isCreated",
+        "bytes"
+      ]
+    },
+    "error": {
+      "description": "Always null here: a refusal is an error result.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "hint": {
+      "description": "Always null here: a refusal is an error result.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "ok",
+    "data"
   ]
 }
 ```
@@ -129,6 +266,67 @@ Replaces exact text in a file; nothing else in it changes, its encoding and line
 
 </details>
 
+<details><summary>Output schema</summary>
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "ok": {
+      "description": "true: the call did what was asked. A refusal comes as an error result with ok false, error and hint.",
+      "type": "boolean"
+    },
+    "data": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "path": {
+          "description": "The file, relative to the session\u0027s root.",
+          "type": "string"
+        },
+        "replaced": {
+          "description": "How many places were replaced.",
+          "type": "integer"
+        },
+        "bytes": {
+          "description": "The length of the file now, in bytes.",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "path",
+        "replaced",
+        "bytes"
+      ]
+    },
+    "error": {
+      "description": "Always null here: a refusal is an error result.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "hint": {
+      "description": "Always null here: a refusal is an error result.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "ok",
+    "data"
+  ]
+}
+```
+
+</details>
+
 ## <code>list_<wbr>directory</code>
 
 Lists what is under a folder, to the depth asked for. Build output, .git and links are never walked into.
@@ -160,6 +358,104 @@ Lists what is under a folder, to the depth asked for. Build output, .git and lin
       "default": 2
     }
   }
+}
+```
+
+</details>
+
+<details><summary>Output schema</summary>
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "ok": {
+      "description": "true: the call did what was asked. A refusal comes as an error result with ok false, error and hint.",
+      "type": "boolean"
+    },
+    "data": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "path": {
+          "description": "The folder listed, relative to the session\u0027s root.",
+          "type": "string"
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "description": "Relative to the session\u0027s root.",
+                "type": "string"
+              },
+              "isDirectory": {
+                "description": "Whether it is a folder.",
+                "type": "boolean"
+              },
+              "bytes": {
+                "description": "The length of a file in bytes; 0 for a folder.",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "path",
+              "isDirectory",
+              "bytes"
+            ]
+          }
+        },
+        "isCut": {
+          "description": "Whether there was more than the server lists at once.",
+          "type": "boolean"
+        },
+        "unread": {
+          "description": "Folders that could not be opened, so nothing in them is listed.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "note": {
+          "description": "What the unread folders mean for the answer; null when there are none.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "path",
+        "entries",
+        "isCut",
+        "unread",
+        "note"
+      ]
+    },
+    "error": {
+      "description": "Always null here: a refusal is an error result.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "hint": {
+      "description": "Always null here: a refusal is an error result.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "ok",
+    "data"
+  ]
 }
 ```
 
@@ -197,6 +493,86 @@ Names the files whose path matches a glob: *.cs, **/Tests/*.cs, appsettings.*.js
   },
   "required": [
     "pattern"
+  ]
+}
+```
+
+</details>
+
+<details><summary>Output schema</summary>
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "ok": {
+      "description": "true: the call did what was asked. A refusal comes as an error result with ok false, error and hint.",
+      "type": "boolean"
+    },
+    "data": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "pattern": {
+          "description": "The pattern as matched.",
+          "type": "string"
+        },
+        "files": {
+          "description": "The files matched, relative to the session\u0027s root.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "isCut": {
+          "description": "Whether there were more matches than the server gives at once.",
+          "type": "boolean"
+        },
+        "unread": {
+          "description": "Folders that could not be opened, so nothing in them was matched.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "note": {
+          "description": "What the unread folders mean for the answer; null when there are none.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "pattern",
+        "files",
+        "isCut",
+        "unread",
+        "note"
+      ]
+    },
+    "error": {
+      "description": "Always null here: a refusal is an error result.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "hint": {
+      "description": "Always null here: a refusal is an error result.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "ok",
+    "data"
   ]
 }
 ```
@@ -244,6 +620,104 @@ Names the lines that contain a text, with the file and the line number of each. 
   },
   "required": [
     "query"
+  ]
+}
+```
+
+</details>
+
+<details><summary>Output schema</summary>
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "ok": {
+      "description": "true: the call did what was asked. A refusal comes as an error result with ok false, error and hint.",
+      "type": "boolean"
+    },
+    "data": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "query": {
+          "description": "The text searched for.",
+          "type": "string"
+        },
+        "matches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "description": "The file, relative to the session\u0027s root.",
+                "type": "string"
+              },
+              "line": {
+                "description": "The line\u0027s number, counted from 1.",
+                "type": "integer"
+              },
+              "text": {
+                "description": "The line, cut to 240 characters.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "path",
+              "line",
+              "text"
+            ]
+          }
+        },
+        "isCut": {
+          "description": "Whether there were more matches than the server gives at once.",
+          "type": "boolean"
+        },
+        "unread": {
+          "description": "Files and folders not searched: too large, or not readable.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "note": {
+          "description": "What the unread files mean for the answer; null when there are none.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "query",
+        "matches",
+        "isCut",
+        "unread",
+        "note"
+      ]
+    },
+    "error": {
+      "description": "Always null here: a refusal is an error result.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "hint": {
+      "description": "Always null here: a refusal is an error result.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "ok",
+    "data"
   ]
 }
 ```

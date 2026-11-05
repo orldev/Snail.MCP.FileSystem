@@ -10,7 +10,7 @@ namespace Snail.MCP.FileSystem.Tools;
 public sealed class DiscoveryTools(ToolIndex index)
 {
     /// <summary>The tools that answer a task described in words.</summary>
-    [McpServerTool(Name = "find_tool", ReadOnly = true, OpenWorld = false)]
+    [McpServerTool(Name = "find_tool", ReadOnly = true, OpenWorld = false, UseStructuredContent = true, OutputSchemaType = typeof(ToolsFound))]
     [Description(ToolDescriptions.FindTool)]
     public CallToolResult FindTool(
         [Description(ToolDescriptions.FindToolTask)] string task,

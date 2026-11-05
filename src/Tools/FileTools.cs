@@ -11,7 +11,7 @@ namespace Snail.MCP.FileSystem.Tools;
 public sealed class FileTools(Files files)
 {
     /// <summary>The text of a file, whole or by lines.</summary>
-    [McpServerTool(Name = "read_file", ReadOnly = true, OpenWorld = false)]
+    [McpServerTool(Name = "read_file", ReadOnly = true, OpenWorld = false, UseStructuredContent = true, OutputSchemaType = typeof(Answered<FileRead>))]
     [Description(ToolDescriptions.Read)]
     public CallToolResult Read(
         [Description(ToolDescriptions.Path)] string path,
@@ -21,7 +21,7 @@ public sealed class FileTools(Files files)
         ToolResponse.From(files.Read(path, from, to, cancellationToken));
 
     /// <summary>A file written whole.</summary>
-    [McpServerTool(Name = "write_file", Destructive = true, OpenWorld = false)]
+    [McpServerTool(Name = "write_file", Destructive = true, OpenWorld = false, UseStructuredContent = true, OutputSchemaType = typeof(Answered<FileWritten>))]
     [Description(ToolDescriptions.Write)]
     public CallToolResult Write(
         [Description(ToolDescriptions.Path)] string path,
@@ -29,7 +29,7 @@ public sealed class FileTools(Files files)
         ToolResponse.From(files.Write(path, text));
 
     /// <summary>An exact piece of a file replaced.</summary>
-    [McpServerTool(Name = "edit_file", Destructive = true, OpenWorld = false)]
+    [McpServerTool(Name = "edit_file", Destructive = true, OpenWorld = false, UseStructuredContent = true, OutputSchemaType = typeof(Answered<FileEdited>))]
     [Description(ToolDescriptions.Edit)]
     public CallToolResult Edit(
         [Description(ToolDescriptions.Path)] string path,
@@ -39,7 +39,7 @@ public sealed class FileTools(Files files)
         ToolResponse.From(files.Edit(path, find, replace, all));
 
     /// <summary>What lies under a folder.</summary>
-    [McpServerTool(Name = "list_directory", ReadOnly = true, OpenWorld = false)]
+    [McpServerTool(Name = "list_directory", ReadOnly = true, OpenWorld = false, UseStructuredContent = true, OutputSchemaType = typeof(Answered<FolderListed>))]
     [Description(ToolDescriptions.List)]
     public CallToolResult List(
         [Description(ToolDescriptions.ListPath)] string? path = null,
@@ -48,7 +48,7 @@ public sealed class FileTools(Files files)
         ToolResponse.From(files.List(path, depth, cancellationToken));
 
     /// <summary>The files whose path matches a glob.</summary>
-    [McpServerTool(Name = "find_files", ReadOnly = true, OpenWorld = false)]
+    [McpServerTool(Name = "find_files", ReadOnly = true, OpenWorld = false, UseStructuredContent = true, OutputSchemaType = typeof(Answered<FilesFound>))]
     [Description(ToolDescriptions.Find)]
     public CallToolResult Find(
         [Description(ToolDescriptions.FindPattern)] string pattern,
@@ -57,7 +57,7 @@ public sealed class FileTools(Files files)
         ToolResponse.From(files.Find(pattern, path, cancellationToken));
 
     /// <summary>The lines that contain a text.</summary>
-    [McpServerTool(Name = "search_text", ReadOnly = true, OpenWorld = false)]
+    [McpServerTool(Name = "search_text", ReadOnly = true, OpenWorld = false, UseStructuredContent = true, OutputSchemaType = typeof(Answered<TextFound>))]
     [Description(ToolDescriptions.Search)]
     public CallToolResult Search(
         [Description(ToolDescriptions.SearchQuery)] string query,
