@@ -1,7 +1,7 @@
 # The server as a container: one per machine, standing behind every agent on it.
 #
-#   docker build -t snail/s3l-filesystem-mcp .
-#   docker run -p 127.0.0.1:8820:8820 -v workspaces:/workspaces snail/s3l-filesystem-mcp
+#   docker build -t s3l-filesystem-mcp:local .
+#   docker run -p 127.0.0.1:8820:8820 -v workspaces:/workspaces s3l-filesystem-mcp:local
 #
 # The volume is the point. This server answers about files, so it must run where the files are: the
 # working copies of the machine are mounted here, and each session names the one it works in through
@@ -21,6 +21,9 @@
 # and the image runs the one executable on runtime-deps, with no .NET runtime in it — a smaller image and a faster
 # start. It is compiled for the platform the image is built for (TARGETARCH: amd64 is linux-x64, arm64 is
 # linux-arm64): ahead-of-time compilation does not cross architectures in the SDK image.
+#
+# Until Snail.Sdk 0.5.0 is released, nuget.config takes the SDK from a local feed this build stage does not have, so the
+# image does not build on this branch; the release maps it back to nuget.org and the restore below takes it from there.
 #
 # VERSION is the release's when the shared mcp-image.yml builds the image (0.0.0-<branch>.<commit> from a branch)
 # and 0.0.0-local otherwise: the server reports it in initialize and the image carries it as its OCI version.
@@ -42,7 +45,8 @@ ARG VERSION
 LABEL org.opencontainers.image.version=$VERSION
 # tini runs as process 1 and starts the program under it: .NET ends an unhandled exception with SIGABRT, which process
 # 1 of a container ignores, so run as process 1 itself a program that fails at start spins at a full core and never
-# exits, and nothing restarts it. Under tini it exits with 134.
+# exits, and nothing restarts it. Under tini a crash exits with 134; a setting refused at the start exits with 1 and
+# one line on stderr, tini or not.
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends tini \
     && rm -rf /var/lib/apt/lists/*
@@ -50,10 +54,11 @@ WORKDIR /app
 COPY --from=build /app .
 RUN mkdir /workspaces && chown app:app /workspaces
 
-# A container's published port does not reach its loopback, so the image opens the port on every interface; the endpoint
-# asks for no credential, so the published port is the boundary: publish it where only the agents reach it.
+# A container's published port does not reach its loopback, so inside one the server opens its port on every interface
+# by itself (DOTNET_RUNNING_IN_CONTAINER, which runtime-deps sets); the endpoint asks for no credential, so the published
+# port is the boundary: publish it where only the agents reach it. Outside a container it keeps to loopback, whatever
+# the settings say.
 ENV SNAIL_MCP_FILESYSTEM_PORT=8820
-ENV SNAIL_MCP_FILESYSTEM_LISTENS_ON_EVERY_INTERFACE=true
 ENV SNAIL_MCP_FILESYSTEM_ROOTS__0=/workspaces
 EXPOSE 8820
 

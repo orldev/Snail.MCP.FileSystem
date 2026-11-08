@@ -6,29 +6,26 @@ namespace Snail.MCP.FileSystem.Application;
 public sealed class CopyWalker(SessionRoots roots, ServerConfig config, IWorkingCopy disk)
 {
     /// <summary>What lies under a folder, to the depth asked for.</summary>
-    public Answer List(string? path, int depth, CancellationToken cancellationToken = default) =>
+    public Answer<JsonObject> List(string? path, int depth, CancellationToken cancellationToken = default) =>
         DiskRefusals.Guarded(path, () => Listing(path, depth, cancellationToken));
 
     /// <summary>Files whose name matches a pattern.</summary>
-    public Answer Find(string? pattern, string? path, CancellationToken cancellationToken = default) =>
+    public Answer<JsonObject> Find(string? pattern, string? path, CancellationToken cancellationToken = default) =>
         DiskRefusals.Guarded(path, () => Finding(pattern, path, cancellationToken));
 
     /// <summary>Lines of files that contain a text.</summary>
-    public Answer Search(string? query, string? path, string? pattern, CancellationToken cancellationToken = default) =>
+    public Answer<JsonObject> Search(string? query, string? path, string? pattern, CancellationToken cancellationToken = default) =>
         DiskRefusals.Guarded(path, () => Searching(query, path, pattern, cancellationToken));
 
-    private Answer Listing(string? path, int depth, CancellationToken cancellationToken)
+    private Answer<JsonObject> Listing(string? path, int depth, CancellationToken cancellationToken)
     {
         string? wanted = string.IsNullOrWhiteSpace(path) ? Root() : path;
 
-        if (roots.Reach(wanted) is not { IsAllowed: true } reached)
-        {
-            return roots.Refusal(wanted);
-        }
+        Reached reached = roots.Reach(wanted, PathKind.Folder);
 
-        if (!disk.IsFolder(reached.Path!))
+        if (!reached.IsAllowed)
         {
-            return Answer.Failed($"'{roots.Relative(reached.Path!)}' is not a folder");
+            return reached.As<JsonObject>();
         }
 
         var unread = new List<string>();
@@ -50,18 +47,20 @@ public sealed class CopyWalker(SessionRoots roots, ServerConfig config, IWorking
         });
     }
 
-    private Answer Finding(string? pattern, string? path, CancellationToken cancellationToken)
+    private Answer<JsonObject> Finding(string? pattern, string? path, CancellationToken cancellationToken)
     {
         string? wanted = string.IsNullOrWhiteSpace(path) ? Root() : path;
 
-        if (roots.Reach(wanted) is not { IsAllowed: true } reached)
+        Reached reached = roots.Reach(wanted, PathKind.Folder);
+
+        if (!reached.IsAllowed)
         {
-            return roots.Refusal(wanted);
+            return reached.As<JsonObject>();
         }
 
         if (string.IsNullOrWhiteSpace(pattern))
         {
-            return Answer.Failed("name the pattern to match", "a pattern is a glob: *.cs, Program.*, **/Tests/*.cs");
+            return Answer.Failed<JsonObject>("name the pattern to match", "a pattern is a glob: *.cs, Program.*, **/Tests/*.cs");
         }
 
         var glob = Glob.Of(pattern.Trim());
@@ -82,23 +81,25 @@ public sealed class CopyWalker(SessionRoots roots, ServerConfig config, IWorking
         });
     }
 
-    private Answer Searching(string? query, string? path, string? pattern, CancellationToken cancellationToken)
+    private Answer<JsonObject> Searching(string? query, string? path, string? pattern, CancellationToken cancellationToken)
     {
         string? wanted = string.IsNullOrWhiteSpace(path) ? Root() : path;
 
-        if (roots.Reach(wanted) is not { IsAllowed: true } reached)
+        Reached reached = roots.Reach(wanted, PathKind.Folder);
+
+        if (!reached.IsAllowed)
         {
-            return roots.Refusal(wanted);
+            return reached.As<JsonObject>();
         }
 
         if (string.IsNullOrWhiteSpace(query))
         {
-            return Answer.Failed("name the text to search for");
+            return Answer.Failed<JsonObject>("name the text to search for");
         }
 
         if (query.Contains('\n', StringComparison.Ordinal))
         {
-            return Answer.Failed("search_text matches within one line, and this text spans several", "search for one line of it, then read_file around the match");
+            return Answer.Failed<JsonObject>("search_text matches within one line, and this text spans several", "search for one line of it, then read_file around the match");
         }
 
         Glob? glob = pattern is { Length: > 0 } given ? Glob.Of(given.Trim()) : null;

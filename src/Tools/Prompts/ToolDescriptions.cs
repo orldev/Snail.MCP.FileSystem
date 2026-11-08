@@ -67,24 +67,4 @@ public static class ToolDescriptions
 
     /// <summary>The <c>pattern</c> parameter of <c>search_text</c>.</summary>
     public const string SearchPattern = "Only search files whose path matches this glob.";
-
-    /// <summary>What <c>find_tool</c> does.</summary>
-    public const string FindTool =
-        "Names the tools that answer a task described in words, with the parameters each takes.";
-
-    /// <summary>The <c>task</c> parameter of <c>find_tool</c>.</summary>
-    public const string FindToolTask = "What you are trying to do, in words: 'change one line', 'where is this text'.";
-
-    /// <summary>The <c>limit</c> parameter of <c>find_tool</c>.</summary>
-    public const string FindToolLimit = "How many tools to name; five by default.";
-
-    /// <summary>What <c>run_tools</c> does.</summary>
-    public const string RunTools =
-        "Runs several of this server's tools in one call, in order, stopping at the first failure. "
-        + "For steps that do not depend on reading the previous answer. Each step is an ordinary tool call under the "
-        + "same grant; run_tools is not a step.";
-
-    /// <summary>The <c>steps</c> parameter of <c>run_tools</c>.</summary>
-    public const string RunToolsSteps =
-        "Steps in order: {\"tool\": \"read_file\", \"params\": {\"path\": \"src/App.cs\"}}. Call find_tool for what a tool takes.";
 }

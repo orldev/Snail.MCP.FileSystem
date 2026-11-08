@@ -6,15 +6,15 @@ namespace Snail.MCP.FileSystem.Application.Ports;
 /// know nothing of how a disk is reached, and a test can hand them a disk that fails: a share that times out, a file that
 /// vanishes between two calls. Any member may throw an <see cref="IOException"/> or an
 /// <see cref="UnauthorizedAccessException"/>; the callers answer those as refusals.
+/// <para>
+/// What is at a path and where a link leads are <see cref="IRootsDisk"/>'s, the questions <c>SessionRoots.Reach</c> asks, and
+/// the server hands this disk to its roots as theirs: the chaos tests failed this port everywhere but at <c>Reach</c>, which
+/// ran on the real disk whatever disk the test gave the server. One disk, so a share that times out fails the reaching
+/// of a path as it fails the reading of the file.
+/// </para>
 /// </remarks>
-public interface IWorkingCopy
+public interface IWorkingCopy : IRootsDisk
 {
-    /// <summary>Whether a file is at the path.</summary>
-    bool IsFile(string path);
-
-    /// <summary>Whether a folder is at the path.</summary>
-    bool IsFolder(string path);
-
     /// <summary>The length of the file at the path, in bytes.</summary>
     long Length(string path);
 
@@ -26,9 +26,6 @@ public interface IWorkingCopy
 
     /// <summary>The files and folders directly in a folder, with every link left out.</summary>
     Contents Contents(string folder);
-
-    /// <summary>Where the link at a path finally leads, or null when the path is not a link.</summary>
-    string? LinkTarget(string path);
 
     /// <summary>Makes a folder and every folder above it that is missing.</summary>
     void MakeFolder(string path);

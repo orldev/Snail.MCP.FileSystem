@@ -21,8 +21,8 @@ public sealed class EditChaosTests
         using var copy = new Copy();
         copy.Write("App.cs", "first();\r\nsecond();\r\n");
 
-        string shown = copy.Files.Read("App.cs", 1, 2).Data!["text"]!.GetValue<string>();
-        Answer answer = copy.Files.Edit("App.cs", shown, "both();", all: false);
+        string shown = copy.Files.Read("App.cs", 1, 2).Value!["text"]!.GetValue<string>();
+        Answer<JsonObject> answer = copy.Files.Edit("App.cs", shown, "both();", all: false);
 
         Assert.True(answer.IsSuccess, answer.Error);
     }

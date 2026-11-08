@@ -22,24 +22,24 @@ public sealed class Files(CopyReader reader, CopyWriter writer, CopyWalker walke
         new(new CopyReader(roots, config, disk), new CopyWriter(roots, config, disk, journal ?? NullLogger<CopyWriter>.Instance), new CopyWalker(roots, config, disk));
 
     /// <summary>The text of a file, whole or by lines, with what was cut named.</summary>
-    public Answer Read(string? path, int? from, int? to, CancellationToken cancellationToken = default) =>
+    public Answer<JsonObject> Read(string? path, int? from, int? to, CancellationToken cancellationToken = default) =>
         reader.Read(path, from, to, cancellationToken);
 
     /// <summary>Writes a file whole, making the folders above it.</summary>
-    public Answer Write(string? path, string? text) => writer.Write(path, text);
+    public Answer<JsonObject> Write(string? path, string? text) => writer.Write(path, text);
 
     /// <summary>Replaces an exact piece of a file, and says how many times it did.</summary>
-    public Answer Edit(string? path, string? find, string? replace, bool all) => writer.Edit(path, find, replace, all);
+    public Answer<JsonObject> Edit(string? path, string? find, string? replace, bool all) => writer.Edit(path, find, replace, all);
 
     /// <summary>What lies under a folder, to the depth asked for.</summary>
-    public Answer List(string? path, int depth, CancellationToken cancellationToken = default) =>
+    public Answer<JsonObject> List(string? path, int depth, CancellationToken cancellationToken = default) =>
         walker.List(path, depth, cancellationToken);
 
     /// <summary>Files whose name matches a pattern.</summary>
-    public Answer Find(string? pattern, string? path, CancellationToken cancellationToken = default) =>
+    public Answer<JsonObject> Find(string? pattern, string? path, CancellationToken cancellationToken = default) =>
         walker.Find(pattern, path, cancellationToken);
 
     /// <summary>Lines of files that contain a text.</summary>
-    public Answer Search(string? query, string? path, string? pattern, CancellationToken cancellationToken = default) =>
+    public Answer<JsonObject> Search(string? query, string? path, string? pattern, CancellationToken cancellationToken = default) =>
         walker.Search(query, path, pattern, cancellationToken);
 }

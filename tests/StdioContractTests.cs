@@ -1,10 +1,12 @@
+using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
+using Snail.MCP.FileSystem.Tests.Support;
 using Snail.MCP.FileSystem.Tools;
 using Snail.Sdk.Mcp.Hosting;
 
@@ -37,8 +39,8 @@ public sealed class StdioContractTests : IDisposable
             {
                 ["steps"] = new object[]
                 {
-                    new Dictionary<string, object?> { ["tool"] = "read_file", ["params"] = new Dictionary<string, object?> { ["path"] = "new.txt" } },
-                    new Dictionary<string, object?> { ["tool"] = "find_files", ["params"] = new Dictionary<string, object?> { ["pattern"] = "*.txt" } }
+                    new Dictionary<string, object?> { ["tool"] = "read_file", ["arguments"] = new Dictionary<string, object?> { ["path"] = "new.txt" } },
+                    new Dictionary<string, object?> { ["tool"] = "find_files", ["arguments"] = new Dictionary<string, object?> { ["pattern"] = "*.txt" } }
                 }
             })
         };
@@ -58,10 +60,11 @@ public sealed class StdioContractTests : IDisposable
     }
 
     /// <summary>
-    /// Every tool states the shape of its answer as an output schema, and an answer that went through carries that shape
+    /// Every file tool states the shape of its answer as an output schema, and an answer that went through carries that shape
     /// as structured content: the very object of its text, with no field the schema does not name and none it requires
     /// missing. A client that validates structured content rejects an answer that does not fit, so a field added to an
-    /// answer and not to its type fails here rather than at a client.
+    /// answer and not to its type fails here rather than at a client. Checked twice: against the listed schema, as a
+    /// validating client reads it (Snail.Sdk's <c>OutputSchemas.Problems</c>), and against the record it was made from.
     /// </summary>
     [Fact]
     public async Task Tools_AnswersThatWentThrough_FitTheirOutputSchema()
@@ -82,7 +85,10 @@ public sealed class StdioContractTests : IDisposable
             JsonElement structured = Assert.NotNull(answer.StructuredContent);
             Type shape = SchemaOf(tool);
 
-            Assert.NotNull(listed.Single(listedTool => listedTool.Name == tool).ProtocolTool.OutputSchema);
+            Tool declared = listed.Single(listedTool => listedTool.Name == tool).ProtocolTool;
+
+            Assert.NotNull(declared.OutputSchema);
+            Assert.Empty(OutputSchemas.Problems(declared, answer));
             Assert.True(JsonNode.DeepEquals(JsonNode.Parse(answer.Text()), JsonNode.Parse(structured.GetRawText())), $"{tool}: the structured content is not the object of the text");
             Assert.NotNull(JsonSerializer.Deserialize(structured, strict.GetTypeInfo(shape)));
         }
@@ -108,20 +114,83 @@ public sealed class StdioContractTests : IDisposable
         ("search_text", new() { ["query"] = "вторая" }),
         ("write_file", new() { ["path"] = "new.txt", ["text"] = "написано" }),
         ("edit_file", new() { ["path"] = "new.txt", ["find"] = "написано", ["replace"] = "исправлено" }),
-        ("find_tool", new() { ["task"] = "change one line in a file" }),
-        ("run_tools", new()
+    ];
+
+    /// <summary>
+    /// Every tool a session is given states an output schema — the server's promise, find_tool and run_tools included —
+    /// so a client that validates structured content can hold every answer to one. run_tools runs only this server's tools,
+    /// none of which reaches beyond the working copy, so it does not claim the open world either.
+    /// </summary>
+    [Fact]
+    public async Task Tools_Listed_EveryOneStatesAnOutputSchema()
+    {
+        await using McpClient client = await StartedAsync();
+
+        IList<McpClientTool> listed = await client.ListToolsAsync();
+
+        Assert.All(listed, tool => Assert.True(tool.ProtocolTool.OutputSchema is not null, $"{tool.Name} states no output schema"));
+        Assert.False(listed.Single(tool => tool.Name == "run_tools").ProtocolTool.Annotations?.OpenWorldHint);
+    }
+
+    /// <summary>find_tool and run_tools answer the whole envelope as their structured content, as the file tools do, and it fits the schema they list.</summary>
+    [Fact]
+    public async Task Machinery_AnswersThatWentThrough_FitTheirOutputSchema()
+    {
+        await File.WriteAllTextAsync(Path.Combine(_root, "notes.md"), "первая строка\n");
+        await using McpClient client = await StartedAsync();
+        IList<McpClientTool> listed = await client.ListToolsAsync();
+
+        CallToolResult found = await client.CallToolAsync("find_tool", new Dictionary<string, object?> { ["task"] = "change one line in a file" });
+        CallToolResult ran = await client.CallToolAsync("run_tools", new Dictionary<string, object?>
         {
             ["steps"] = new object[]
             {
-                new Dictionary<string, object?> { ["tool"] = "read_file", ["params"] = new Dictionary<string, object?> { ["path"] = "new.txt" } },
-                new Dictionary<string, object?> { ["tool"] = "read_file", ["params"] = new Dictionary<string, object?> { ["path"] = "missing.txt" } }
+                new Dictionary<string, object?> { ["tool"] = "read_file", ["arguments"] = new Dictionary<string, object?> { ["path"] = "notes.md" } },
+                new Dictionary<string, object?> { ["tool"] = "find_files", ["arguments"] = new Dictionary<string, object?> { ["pattern"] = "*.md" } }
             }
-        })
-    ];
+        });
+
+        foreach ((string tool, CallToolResult answer) in new[] { ("find_tool", found), ("run_tools", ran) })
+        {
+            JsonElement structured = Assert.NotNull(answer.StructuredContent);
+
+            Assert.True(answer.IsOk(), answer.Text());
+            Assert.Empty(OutputSchemas.Problems(listed.Single(listedTool => listedTool.Name == tool).ProtocolTool, answer));
+            Assert.True(JsonNode.DeepEquals(JsonNode.Parse(answer.Text()), JsonNode.Parse(structured.GetRawText())), $"{tool}: the structured content is not the object of the text");
+        }
+    }
+
+    /// <summary>
+    /// The fleet's machinery, Snail.Sdk's, in the envelope. A run that stops at a failed step is a failure, flagged and in
+    /// text alone, carrying the steps before it as its data.
+    /// </summary>
+    [Fact]
+    public async Task Machinery_OverStdio_AnswersTheEnvelope()
+    {
+        await File.WriteAllTextAsync(Path.Combine(_root, "notes.md"), "первая строка\n");
+        await using McpClient client = await StartedAsync();
+
+        CallToolResult found = await client.CallToolAsync("find_tool", new Dictionary<string, object?> { ["task"] = "change one line in a file" });
+        CallToolResult stopped = await client.CallToolAsync("run_tools", new Dictionary<string, object?>
+        {
+            ["steps"] = new object[]
+            {
+                new Dictionary<string, object?> { ["tool"] = "read_file", ["arguments"] = new Dictionary<string, object?> { ["path"] = "notes.md" } },
+                new Dictionary<string, object?> { ["tool"] = "read_file", ["arguments"] = new Dictionary<string, object?> { ["path"] = "missing.txt" } }
+            }
+        });
+
+        Assert.True(found.IsOk(), found.Text());
+        Assert.Equal("edit_file", found.Data()!["tools"]![0]!["name"]!.GetValue<string>());
+        Assert.True(stopped.IsError);
+        Assert.Null(stopped.StructuredContent);
+        Assert.Contains("step 2 of 2 (read_file) failed", stopped.Error(), StringComparison.Ordinal);
+        Assert.Equal(2, stopped.Data()!["ran"]!.GetValue<int>());
+    }
 
     /// <summary>The type a tool's output schema is made from, as its attribute names it.</summary>
     private static Type SchemaOf(string tool) =>
-        typeof(ToolResponse).Assembly.GetTypes()
+        typeof(FileTools).Assembly.GetTypes()
             .SelectMany(type => type.GetMethods())
             .Select(method => method.GetCustomAttribute<McpServerToolAttribute>())
             .Single(attribute => attribute?.Name == tool)!
@@ -148,6 +217,81 @@ public sealed class StdioContractTests : IDisposable
         IList<McpClientTool> listed = await client.ListToolsAsync();
 
         Assert.Empty(ToolGuards.Problems(listed.Select(tool => tool.ProtocolTool)));
+    }
+
+    /// <summary>
+    /// The program refuses to open its keyless endpoint beyond loopback outside a container, and says which of the
+    /// operator's variables asked for it, rather than serving the roots to the network: one line and exit code 1, no
+    /// crash with a stack trace.
+    /// </summary>
+    [OutsideAContainerFact]
+    public async Task Start_EveryInterfaceOutsideAContainer_StopsNamingTheVariable()
+    {
+        (string? command, string[]? arguments) = ServerProgram.Command("Snail.MCP.FileSystem", "SNAIL_FILESYSTEM_SERVER");
+        var start = new ProcessStartInfo(command) { RedirectStandardError = true, RedirectStandardOutput = true, RedirectStandardInput = true };
+
+        foreach (string argument in arguments)
+        {
+            start.ArgumentList.Add(argument);
+        }
+
+        start.Environment["HOME"] = ServerProgram.Home;
+        start.Environment[$"{ServerConfigExtensions.Prefix}CONFIG"] = ServerProgram.NoSettingsFile;
+        start.Environment[$"{ServerConfigExtensions.Prefix}ROOTS__0"] = _root;
+        start.Environment[$"{ServerConfigExtensions.Prefix}PORT"] = Ports.Free().ToString(CultureInfo.InvariantCulture);
+        start.Environment[$"{ServerConfigExtensions.Prefix}LISTENS_ON_EVERY_INTERFACE"] = "true";
+
+        using Process program = Process.Start(start)!;
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        Task<string> said = program.StandardError.ReadToEndAsync(deadline.Token);
+
+        await program.WaitForExitAsync(deadline.Token);
+
+        string stderr = await said;
+
+        Assert.Equal(1, program.ExitCode);
+        Assert.Contains($"{ServerConfigExtensions.Prefix}LISTENS_ON_EVERY_INTERFACE", stderr, StringComparison.Ordinal);
+        Assert.DoesNotContain("   at ", stderr, StringComparison.Ordinal);
+    }
+
+    /// <summary>A limit the server cannot run on stops it in one line naming the variable, with exit code 1 and no trace.</summary>
+    [Fact]
+    public async Task Start_StepLimitOfZero_RefusesTheStartInOneLine()
+    {
+        var environment = new Dictionary<string, string?>
+        {
+            [$"{ServerConfigExtensions.Prefix}ROOTS__0"] = _root,
+            [$"{ServerConfigExtensions.Prefix}STEP_LIMIT"] = "0"
+        };
+
+        ServerExitedException exited = await Assert.ThrowsAsync<ServerExitedException>(() => ServerProgram.StartAsync("Snail.MCP.FileSystem", "SNAIL_FILESYSTEM_SERVER", environment));
+
+        Assert.Equal(1, exited.ExitCode);
+        Assert.Equal(
+            $"{ServerConfigExtensions.Prefix}STEP_LIMIT (or StepLimit in the settings file) is '0'; it is a number of steps above zero.",
+            exited.Stderr.Trim());
+    }
+
+    /// <summary>
+    /// A setting that is not even of its type stops the start in one line naming the variable, exit code 1, no trace: the
+    /// settings are bound before there is a host, and that binding refuses instead of crashing with 134.
+    /// </summary>
+    [Fact]
+    public async Task Start_StepLimitThatIsNoNumber_RefusesTheStartInOneLine()
+    {
+        var environment = new Dictionary<string, string?>
+        {
+            [$"{ServerConfigExtensions.Prefix}ROOTS__0"] = _root,
+            [$"{ServerConfigExtensions.Prefix}STEP_LIMIT"] = "abc"
+        };
+
+        ServerExitedException exited = await Assert.ThrowsAsync<ServerExitedException>(() => ServerProgram.StartAsync("Snail.MCP.FileSystem", "SNAIL_FILESYSTEM_SERVER", environment));
+        string stderr = exited.Stderr.Trim();
+
+        Assert.Equal(1, exited.ExitCode);
+        Assert.Contains($"{ServerConfigExtensions.Prefix}STEP_LIMIT", stderr, StringComparison.Ordinal);
+        Assert.DoesNotContain('\n', stderr);
+        Assert.DoesNotContain("   at ", stderr, StringComparison.Ordinal);
     }
 
     private Task<McpClient> StartedAsync()

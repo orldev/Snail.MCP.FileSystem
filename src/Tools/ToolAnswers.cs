@@ -1,21 +1,6 @@
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
 
 namespace Snail.MCP.FileSystem.Tools;
-
-/// <summary>The answer of a file tool that went through, as its output schema names it and as its text spells it.</summary>
-/// <remarks>
-/// A client that validates structured content, or turns a tool into a typed call, takes the shape from this schema. A
-/// refusal is the same envelope with <c>ok</c> false, <c>data</c> null, an <c>error</c> and a <c>hint</c>, sent as an error
-/// result in text alone, so it never has to fit the schema of what the tool answers when it works.
-/// </remarks>
-/// <typeparam name="T">What the tool answers.</typeparam>
-[SuppressMessage("Snail", "S3L0008", Justification = "ok is the field every answer of this server and of the fleet carries, which clients already read.")]
-public sealed record Answered<T>(
-    [property: Description("true: the call did what was asked. A refusal comes as an error result with ok false, error and hint.")] bool Ok,
-    T Data,
-    [property: Description("Always null here: a refusal is an error result.")] string? Error = null,
-    [property: Description("Always null here: a refusal is an error result.")] string? Hint = null);
 
 /// <summary>What <c>read_file</c> answers.</summary>
 public sealed record FileRead(
@@ -73,40 +58,3 @@ public sealed record TextLine(
     [property: Description("The file, relative to the session's root.")] string Path,
     [property: Description("The line's number, counted from 1.")] int Line,
     [property: Description("The line, cut to 240 characters.")] string Text);
-
-/// <summary>What <c>find_tool</c> answers.</summary>
-public sealed record ToolsFound(
-    [property: Description("The task as asked.")] string? Task,
-    [property: Description("Whether any tool matched; when none did, every tool is listed.")] bool IsMatched,
-    [property: Description("Why every tool is listed; null when some matched.")] string? Note,
-    IReadOnlyList<FoundTool> Tools);
-
-/// <summary>One tool <c>find_tool</c> names, enough to call it.</summary>
-public sealed record FoundTool(string Name, string Description, IReadOnlyList<FoundParameter> Parameters);
-
-/// <summary>One parameter of a tool <c>find_tool</c> names.</summary>
-public sealed record FoundParameter(
-    string Name,
-    [property: Description("The JSON type of the value.")] string Type,
-    [property: Description("Whether the call must give it.")] bool IsRequired,
-    string? Description);
-
-/// <summary>What <c>run_tools</c> answers, whether every step ran or one stopped the run.</summary>
-[SuppressMessage("Snail", "S3L0008", Justification = "ok is the field every answer of this server and of the fleet carries, which clients already read.")]
-public sealed record StepsRun(
-    [property: Description("Whether every step ran and went through.")] bool Ok,
-    [property: Description("How many steps ran.")] int Ran,
-    IReadOnlyList<StepRun> Steps,
-    [property: Description("How many answers were left out to stay inside the output budget.")] int Omitted,
-    [property: Description("Why answers were left out; null when none were.")] string? Note,
-    [property: Description("Why the run stopped; null when every step went through.")] string? Error,
-    [property: Description("What to do about it; null when there is nothing to do.")] string? Hint);
-
-/// <summary>One step of a run: the tool's own answer, its refusal, or a note that its answer was left out.</summary>
-[SuppressMessage("Snail", "S3L0008", Justification = "ok is the field every answer of this server and of the fleet carries, which clients already read.")]
-public sealed record StepRun(
-    [property: Description("The tool the step called.")] string Tool,
-    [property: Description("Whether the step went through.")] bool Ok,
-    [property: Description("The tool's answer as it gives it on its own call; absent when it was refused or left out.")] JsonNode? Data = null,
-    [property: Description("The tool's refusal; absent when it went through.")] string? Error = null,
-    [property: Description("Whether the answer was left out to stay inside the output budget; absent when it was not.")] bool IsOmitted = false);

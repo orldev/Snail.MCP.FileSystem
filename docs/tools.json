@@ -4,7 +4,7 @@
   ],
   "families": [
     { "type": "FileTools", "slug": "files", "title": "Files of the working copy" },
-    { "type": "DiscoveryTools", "slug": "discovery", "title": "Finding a tool" },
-    { "type": "SequenceTools", "slug": "sequence", "title": "Several tools in one call" }
+    { "tools": ["find_tool"], "slug": "discovery", "title": "Finding a tool" },
+    { "tools": ["run_tools"], "slug": "sequence", "title": "Several tools in one call" }
   ]
 }

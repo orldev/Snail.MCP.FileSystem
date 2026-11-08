@@ -17,7 +17,8 @@ public static class ServerGuidance
         Do not know which tool: call find_tool with the task in words. Several questions that do not depend
         on each other's answers: call run_tools once with them as steps, instead of a round trip each.
 
-        Every answer is JSON with an ok flag. When ok is false, read error and hint and fix the call
-        instead of repeating it.
+        Every answer is JSON with an ok flag, and a failed call is also flagged isError. When ok is false,
+        read error and hint and fix the call instead of repeating it; type, where the answer has one, names
+        the kind of failure.
         """;
 }

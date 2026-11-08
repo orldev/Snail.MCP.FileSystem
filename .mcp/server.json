@@ -15,19 +15,13 @@
       "environmentVariables": [
         {
           "name": "SNAIL_MCP_FILESYSTEM_ROOTS__0",
-          "description": "Absolute path the agent may work in when the session names no root of its own; add ROOTS__1 and so on for more. Nothing outside them is reachable.",
+          "description": "Absolute path the agent works in; add ROOTS__1 and so on for more. Nothing outside them is reachable, and without one nothing is served.",
           "isRequired": true
         },
         {
           "name": "SNAIL_MCP_FILESYSTEM_PORT",
           "description": "Port to answer sessions on, each naming its own working copy at /mcp?root=…; unset means the server is started as a program and speaks stdio to its parent.",
           "isRequired": false
-        },
-        {
-          "name": "SNAIL_MCP_FILESYSTEM_LISTENS_ON_EVERY_INTERFACE",
-          "description": "Whether that port is opened on every interface rather than on loopback alone; the container image turns it on, and the published port is then the boundary.",
-          "isRequired": false,
-          "default": "false"
         },
         {
           "name": "SNAIL_MCP_FILESYSTEM_ALLOW_WRITE",
@@ -73,7 +67,7 @@
       "environmentVariables": [
         {
           "name": "SNAIL_MCP_FILESYSTEM_ROOTS__0",
-          "description": "Absolute path the agent may work in when the session names no root of its own; add ROOTS__1 and so on for more. Nothing outside them is reachable.",
+          "description": "The volume the working copies live in; add ROOTS__1 and so on for more. A root a session names must lie inside it and one that names none is served it whole; without it every session is refused, the root it names too.",
           "isRequired": true
         },
         {

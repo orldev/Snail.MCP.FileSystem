@@ -1,7 +1,10 @@
 using System.ComponentModel;
 using System.Reflection;
+using System.Text.Json;
+using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
+using Snail.MCP.FileSystem.Tests.Support;
 using Snail.MCP.FileSystem.Tools;
 
 namespace Snail.MCP.FileSystem.Tests;
@@ -11,18 +14,11 @@ public sealed class ToolContractTests
 {
     private static readonly MethodInfo[] Tools =
     [
-        .. typeof(ToolIndex).Assembly.GetTypes()
+        .. typeof(FileTools).Assembly.GetTypes()
             .Where(type => type.GetCustomAttribute<McpServerToolTypeAttribute>() is not null)
             .SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Instance))
             .Where(method => method.GetCustomAttribute<McpServerToolAttribute>() is not null)
     ];
-
-    /// <summary>The index names the tool classes one by one, for the native build; a class missing there would vanish from find_tool.</summary>
-    [Fact]
-    public void Index_AgainstTheAssembly_HoldsEveryTool() =>
-        Assert.Equal(
-            Tools.Select(tool => tool.GetCustomAttribute<McpServerToolAttribute>()!.Name!).Order(StringComparer.Ordinal),
-            ToolIndex.All.Select(entry => entry.Name).Order(StringComparer.Ordinal));
 
     [Fact]
     public void Tools_Names_AreWrittenTheProtocolsWay() =>
@@ -52,7 +48,7 @@ public sealed class ToolContractTests
     {
         string[] declared =
         [
-            "edit_file", "find_files", "find_tool", "list_directory", "read_file", "run_tools", "search_text", "write_file"
+            "edit_file", "find_files", "list_directory", "read_file", "search_text", "write_file"
         ];
 
         string[] actual =
@@ -65,14 +61,16 @@ public sealed class ToolContractTests
 
     /// <summary>
     /// Descriptions are a standing price: a client carries them in every request, whether it uses the tool or not. The
-    /// ceiling stands here so that an added sentence is a decision rather than an accident.
+    /// ceiling stands here so that an added sentence is a decision rather than an accident. Measured on the list a session
+    /// receives, Snail.Sdk's find_tool and run_tools included: the session pays for theirs as for the server's own.
     /// </summary>
     [Fact]
-    public void Descriptions_StandingCharge_StaysUnderItsCeiling()
+    public async Task Descriptions_StandingCharge_StaysUnderItsCeiling()
     {
         const int ceiling = 3_000;
 
-        int charge = Tools.Sum(ToolCharge);
+        IList<McpClientTool> listed = await ListedAsync();
+        int charge = listed.Sum(tool => (tool.ProtocolTool.Description?.Length ?? 0) + Described(tool.ProtocolTool.InputSchema));
 
         Assert.True(
             charge < ceiling,
@@ -80,27 +78,56 @@ public sealed class ToolContractTests
             + "raise the ceiling deliberately and say what the caller gets for the context it costs.");
     }
 
-    /// <summary>The characters a tool's descriptions cost every session: its own and its parameters'.</summary>
-    private static int ToolCharge(MethodInfo tool) =>
-        (tool.GetCustomAttribute<DescriptionAttribute>()?.Description?.Length ?? 0) + tool.GetParameters().Sum(ParameterCharge);
+    /// <summary>Every tool a session is given, the server's and Snail.Sdk's, and nothing else.</summary>
+    [Fact]
+    public async Task Tools_Listed_AreTheFileToolsAndTheFleetsMachinery()
+    {
+        string[] expected =
+        [
+            "edit_file", "find_files", "find_tool", "list_directory", "read_file", "run_tools", "search_text", "write_file"
+        ];
 
-    private static int ParameterCharge(ParameterInfo parameter) => parameter.GetCustomAttribute<DescriptionAttribute>()?.Description?.Length ?? 0;
+        IList<McpClientTool> listed = await ListedAsync();
 
-    /// <summary>The mechanics shared by the whole fleet are named alike by all three servers.</summary>
+        Assert.Equal(expected, listed.Select(tool => tool.Name).Order(StringComparer.Ordinal));
+    }
+
+    /// <summary>The mechanics shared by the whole fleet are named alike by every server.</summary>
     /// <remarks>
     /// find_tool, run_tools and run_program are not about files but about how ANY server is asked what it can do, and how
     /// several of its tools are spent in one call. The platform calls them as "server.name", and a mismatch would mean the
-    /// same question asked of three servers in three ways. Checked here, because the name of a tool is part of the
-    /// contract outside, not a detail.
+    /// same question asked of three servers in three ways. They are Snail.Sdk's now; checked here on the list a session
+    /// receives, because the name of a tool is part of the contract outside, not a detail.
     /// </remarks>
     [Fact]
-    public void Machinery_OfTheFleet_IsSpelledAlike()
+    public async Task Machinery_OfTheFleet_IsSpelledAlike()
     {
         string[] machinery = ["find_tool", "run_program", "run_tools"];
 
-        var names = Tools.Select(tool => tool.GetCustomAttribute<McpServerToolAttribute>()!.Name!).ToList();
+        var names = (await ListedAsync()).Select(tool => tool.Name).ToList();
 
         Assert.NotEmpty(names.Intersect(machinery));
         Assert.DoesNotContain(names, name => machinery.Any(known => name.EndsWith("_" + known, StringComparison.Ordinal)));
     }
+
+    private static async Task<IList<McpClientTool>> ListedAsync()
+    {
+        using var copy = new Copy();
+        await using InProcessServer server = await Listening.StartedAsync(copy.Config);
+        await using McpClient client = await server.SessionAsync();
+
+        return await client.ListToolsAsync();
+    }
+
+    /// <summary>The characters of every description in an input schema, nested ones included.</summary>
+    private static int Described(JsonElement schema) =>
+        schema.ValueKind switch
+        {
+            JsonValueKind.Object => schema.EnumerateObject().Sum(property =>
+                property.Name == "description" && property.Value.ValueKind == JsonValueKind.String
+                    ? property.Value.GetString()!.Length
+                    : Described(property.Value)),
+            JsonValueKind.Array => schema.EnumerateArray().Sum(Described),
+            _ => 0
+        };
 }

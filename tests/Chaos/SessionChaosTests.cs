@@ -1,12 +1,7 @@
 using System.Net;
 using System.Text;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting.Server;
-using Microsoft.AspNetCore.Hosting.Server.Features;
-using Microsoft.Extensions.DependencyInjection;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
-using Snail.MCP.FileSystem.Extensions;
 using Snail.MCP.FileSystem.Tests.Support;
 
 namespace Snail.MCP.FileSystem.Tests.Chaos;
@@ -19,27 +14,29 @@ public sealed class SessionChaosTests
 {
     /// <summary>
     /// The grant is a call-tool filter, and <c>run_tools</c> calls <see cref="ModelContextProtocol.Server.McpServerTool.InvokeAsync"/>
-    /// itself, past the filter. A role given <c>read_file</c> and <c>run_tools</c> writes files — exactly the hole
-    /// <see cref="SessionGrant"/>'s remarks say the grant was made to close.
+    /// itself, past the filter. A role given <c>read_file</c> and <c>run_tools</c> wrote files — exactly the hole
+    /// <see cref="SessionGrant"/>'s remarks say the grant was made to close. The step is withheld, and the run stops at it.
     /// </summary>
     [Fact]
     public async Task RunTools_SessionNotGrantedWriteFile_CannotWriteThroughIt()
     {
         using var copy = new Copy();
-        await using WebApplication server = await StartedAsync(new ServerConfig());
+        await using InProcessServer server = await Listening.StartedAsync(new ServerConfig { Roots = [Path.GetTempPath()] });
         await using HttpClientTransport transport = Transport(server, $"root={Uri.EscapeDataString(copy.Root)}&tool=read_file&tool=run_tools");
         await using McpClient client = await McpClient.CreateAsync(transport);
 
         CallToolResult direct = await client.CallToolAsync("write_file", new Dictionary<string, object?> { ["path"] = "direct.txt", ["text"] = "x" });
-        await client.CallToolAsync("run_tools", new Dictionary<string, object?>
+        CallToolResult forwarded = await client.CallToolAsync("run_tools", new Dictionary<string, object?>
         {
             ["steps"] = new object[]
             {
-                new Dictionary<string, object?> { ["tool"] = "write_file", ["params"] = new Dictionary<string, object?> { ["path"] = "forwarded.txt", ["text"] = "written around the grant" } }
+                new Dictionary<string, object?> { ["tool"] = "write_file", ["arguments"] = new Dictionary<string, object?> { ["path"] = "forwarded.txt", ["text"] = "written around the grant" } }
             }
         });
 
         Assert.True(direct.IsError);
+        Assert.True(forwarded.IsError);
+        Assert.Contains("'write_file' was not granted", forwarded.Error(), StringComparison.Ordinal);
         Assert.False(File.Exists(Path.Combine(copy.Root, "forwarded.txt")), "run_tools wrote a file the session was not granted to write");
     }
 
@@ -54,7 +51,7 @@ public sealed class SessionChaosTests
         using var volume = new Copy();
         using var outside = new Copy();
         outside.Write("secret.txt", "not yours");
-        await using WebApplication server = await StartedAsync(new ServerConfig { Roots = [volume.Root] });
+        await using InProcessServer server = await Listening.StartedAsync(new ServerConfig { Roots = [volume.Root] });
 
         string text = await ReadOrRefusedAsync(server, $"root={Uri.EscapeDataString(outside.Root)}", "secret.txt");
 
@@ -71,7 +68,7 @@ public sealed class SessionChaosTests
     public async Task Server_AtAnAddressOpenedWithInitialize_KeepsNoSession()
     {
         using var copy = new Copy();
-        await using WebApplication server = await StartedAsync(new ServerConfig());
+        await using InProcessServer server = await Listening.StartedAsync(new ServerConfig { Roots = [Path.GetTempPath()] });
         await using HttpClientTransport transport = Transport(server, $"root={Uri.EscapeDataString(copy.Root)}");
         await using McpClient client = await McpClient.CreateAsync(transport, new McpClientOptions { ProtocolVersion = "2025-11-25" });
 
@@ -88,7 +85,7 @@ public sealed class SessionChaosTests
     public async Task Session_RequestFromABrowserPage_IsRefused()
     {
         using var copy = new Copy();
-        await using WebApplication server = await StartedAsync(new ServerConfig());
+        await using InProcessServer server = await Listening.StartedAsync(new ServerConfig());
         using var http = new HttpClient();
         using var request = new HttpRequestMessage(HttpMethod.Post, Endpoint(server, $"root={Uri.EscapeDataString(copy.Root)}"))
         {
@@ -113,15 +110,17 @@ public sealed class SessionChaosTests
     public async Task RunTools_StepThatIsRunToolsAgain_IsRefused()
     {
         using var copy = new Copy();
-        await using WebApplication server = await StartedAsync(new ServerConfig());
+        await using InProcessServer server = await Listening.StartedAsync(new ServerConfig { Roots = [Path.GetTempPath()] });
         await using HttpClientTransport transport = Transport(server, $"root={Uri.EscapeDataString(copy.Root)}");
         await using McpClient client = await McpClient.CreateAsync(transport);
 
-        var inner = new Dictionary<string, object?> { ["tool"] = "find_tool", ["params"] = new Dictionary<string, object?> { ["task"] = "read" } };
-        var nested = new Dictionary<string, object?> { ["tool"] = "run_tools", ["params"] = new Dictionary<string, object?> { ["steps"] = new object[] { inner } } };
+        var inner = new Dictionary<string, object?> { ["tool"] = "find_tool", ["arguments"] = new Dictionary<string, object?> { ["task"] = "read" } };
+        var nested = new Dictionary<string, object?> { ["tool"] = "run_tools", ["arguments"] = new Dictionary<string, object?> { ["steps"] = new object[] { inner } } };
         CallToolResult answer = await client.CallToolAsync("run_tools", new Dictionary<string, object?> { ["steps"] = new object[] { nested } });
 
-        Assert.Contains("\"ok\":false", answer.Text(), StringComparison.Ordinal);
+        Assert.True(answer.IsError);
+        Assert.False(answer.IsOk());
+        Assert.Contains("'run_tools' runs other tools itself", answer.Error(), StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -134,7 +133,7 @@ public sealed class SessionChaosTests
         using var copy = new Copy();
         string loop = Path.Combine(copy.Root, "loop");
         File.CreateSymbolicLink(loop, loop);
-        await using WebApplication server = await StartedAsync(new ServerConfig());
+        await using InProcessServer server = await Listening.StartedAsync(new ServerConfig { Roots = [Path.GetTempPath()] });
         await using HttpClientTransport transport = Transport(server, $"root={Uri.EscapeDataString(copy.Root)}");
         await using McpClient client = await McpClient.CreateAsync(transport);
 
@@ -143,16 +142,7 @@ public sealed class SessionChaosTests
         Assert.StartsWith("{\"ok\":false", answer.Text(), StringComparison.Ordinal);
     }
 
-    private static async Task<WebApplication> StartedAsync(ServerConfig config)
-    {
-        WebApplication server = McpServerHost.Listening([], config);
-
-        await server.StartAsync();
-
-        return server;
-    }
-
-    private static async Task<string> ReadOrRefusedAsync(WebApplication server, string query, string path)
+    private static async Task<string> ReadOrRefusedAsync(InProcessServer server, string query, string path)
     {
         try
         {
@@ -168,14 +158,8 @@ public sealed class SessionChaosTests
         }
     }
 
-    private static HttpClientTransport Transport(WebApplication server, string query) =>
-        new(new HttpClientTransportOptions { Endpoint = Endpoint(server, query) });
+    private static HttpClientTransport Transport(InProcessServer server, string query) =>
+        new(new HttpClientTransportOptions { Endpoint = Listening.Endpoint(server, query) });
 
-    private static Uri Endpoint(WebApplication server, string query)
-    {
-        string bound = server.Services.GetRequiredService<IServer>().Features.Get<IServerAddressesFeature>()!.Addresses.First();
-        int port = new Uri(bound.Replace("://*:", "://localhost:", StringComparison.Ordinal)).Port;
-
-        return new Uri($"http://127.0.0.1:{port}{McpServerHost.Path}?{query}");
-    }
+    private static Uri Endpoint(InProcessServer server, string query) => Listening.Endpoint(server, query);
 }

@@ -54,14 +54,36 @@ Reads a file as text, whole or by lines. Says how many lines it has and whether 
   "type": "object",
   "properties": {
     "ok": {
-      "description": "true: the call did what was asked. A refusal comes as an error result with ok false, error and hint.",
+      "description": "true: the call did what was asked. A refusal is an error result with ok false, error, hint and type in its text alone.",
       "type": "boolean"
     },
-    "data": {
+    "error": {
+      "description": "Why the call did not go through; present only on a refusal, which is an error result.",
       "type": [
-        "object",
+        "string",
         "null"
       ],
+      "default": null
+    },
+    "hint": {
+      "description": "What to do about a refusal; present only on one.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "type": {
+      "description": "The kind of refusal, a word a program can branch on; present only on one.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "data": {
+      "description": "What the tool answers.",
+      "type": "object",
       "properties": {
         "path": {
           "description": "The file, relative to the session\u0027s root.",
@@ -96,22 +118,6 @@ Reads a file as text, whole or by lines. Says how many lines it has and whether 
         "text",
         "isCut"
       ]
-    },
-    "error": {
-      "description": "Always null here: a refusal is an error result.",
-      "type": [
-        "string",
-        "null"
-      ],
-      "default": null
-    },
-    "hint": {
-      "description": "Always null here: a refusal is an error result.",
-      "type": [
-        "string",
-        "null"
-      ],
-      "default": null
     }
   },
   "required": [
@@ -165,14 +171,36 @@ Writes a file whole, creating the folders above it. Overwrites without asking: r
   "type": "object",
   "properties": {
     "ok": {
-      "description": "true: the call did what was asked. A refusal comes as an error result with ok false, error and hint.",
+      "description": "true: the call did what was asked. A refusal is an error result with ok false, error, hint and type in its text alone.",
       "type": "boolean"
     },
-    "data": {
+    "error": {
+      "description": "Why the call did not go through; present only on a refusal, which is an error result.",
       "type": [
-        "object",
+        "string",
         "null"
       ],
+      "default": null
+    },
+    "hint": {
+      "description": "What to do about a refusal; present only on one.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "type": {
+      "description": "The kind of refusal, a word a program can branch on; present only on one.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "data": {
+      "description": "What the tool answers.",
+      "type": "object",
       "properties": {
         "path": {
           "description": "The file, relative to the session\u0027s root.",
@@ -192,22 +220,6 @@ Writes a file whole, creating the folders above it. Overwrites without asking: r
         "isCreated",
         "bytes"
       ]
-    },
-    "error": {
-      "description": "Always null here: a refusal is an error result.",
-      "type": [
-        "string",
-        "null"
-      ],
-      "default": null
-    },
-    "hint": {
-      "description": "Always null here: a refusal is an error result.",
-      "type": [
-        "string",
-        "null"
-      ],
-      "default": null
     }
   },
   "required": [
@@ -273,14 +285,36 @@ Replaces exact text in a file; nothing else in it changes, its encoding and line
   "type": "object",
   "properties": {
     "ok": {
-      "description": "true: the call did what was asked. A refusal comes as an error result with ok false, error and hint.",
+      "description": "true: the call did what was asked. A refusal is an error result with ok false, error, hint and type in its text alone.",
       "type": "boolean"
     },
-    "data": {
+    "error": {
+      "description": "Why the call did not go through; present only on a refusal, which is an error result.",
       "type": [
-        "object",
+        "string",
         "null"
       ],
+      "default": null
+    },
+    "hint": {
+      "description": "What to do about a refusal; present only on one.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "type": {
+      "description": "The kind of refusal, a word a program can branch on; present only on one.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "data": {
+      "description": "What the tool answers.",
+      "type": "object",
       "properties": {
         "path": {
           "description": "The file, relative to the session\u0027s root.",
@@ -300,22 +334,6 @@ Replaces exact text in a file; nothing else in it changes, its encoding and line
         "replaced",
         "bytes"
       ]
-    },
-    "error": {
-      "description": "Always null here: a refusal is an error result.",
-      "type": [
-        "string",
-        "null"
-      ],
-      "default": null
-    },
-    "hint": {
-      "description": "Always null here: a refusal is an error result.",
-      "type": [
-        "string",
-        "null"
-      ],
-      "default": null
     }
   },
   "required": [
@@ -370,14 +388,36 @@ Lists what is under a folder, to the depth asked for. Build output, .git and lin
   "type": "object",
   "properties": {
     "ok": {
-      "description": "true: the call did what was asked. A refusal comes as an error result with ok false, error and hint.",
+      "description": "true: the call did what was asked. A refusal is an error result with ok false, error, hint and type in its text alone.",
       "type": "boolean"
     },
-    "data": {
+    "error": {
+      "description": "Why the call did not go through; present only on a refusal, which is an error result.",
       "type": [
-        "object",
+        "string",
         "null"
       ],
+      "default": null
+    },
+    "hint": {
+      "description": "What to do about a refusal; present only on one.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "type": {
+      "description": "The kind of refusal, a word a program can branch on; present only on one.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "data": {
+      "description": "What the tool answers.",
+      "type": "object",
       "properties": {
         "path": {
           "description": "The folder listed, relative to the session\u0027s root.",
@@ -434,22 +474,6 @@ Lists what is under a folder, to the depth asked for. Build output, .git and lin
         "unread",
         "note"
       ]
-    },
-    "error": {
-      "description": "Always null here: a refusal is an error result.",
-      "type": [
-        "string",
-        "null"
-      ],
-      "default": null
-    },
-    "hint": {
-      "description": "Always null here: a refusal is an error result.",
-      "type": [
-        "string",
-        "null"
-      ],
-      "default": null
     }
   },
   "required": [
@@ -506,14 +530,36 @@ Names the files whose path matches a glob: *.cs, **/Tests/*.cs, appsettings.*.js
   "type": "object",
   "properties": {
     "ok": {
-      "description": "true: the call did what was asked. A refusal comes as an error result with ok false, error and hint.",
+      "description": "true: the call did what was asked. A refusal is an error result with ok false, error, hint and type in its text alone.",
       "type": "boolean"
     },
-    "data": {
+    "error": {
+      "description": "Why the call did not go through; present only on a refusal, which is an error result.",
       "type": [
-        "object",
+        "string",
         "null"
       ],
+      "default": null
+    },
+    "hint": {
+      "description": "What to do about a refusal; present only on one.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "type": {
+      "description": "The kind of refusal, a word a program can branch on; present only on one.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "data": {
+      "description": "What the tool answers.",
+      "type": "object",
       "properties": {
         "pattern": {
           "description": "The pattern as matched.",
@@ -552,22 +598,6 @@ Names the files whose path matches a glob: *.cs, **/Tests/*.cs, appsettings.*.js
         "unread",
         "note"
       ]
-    },
-    "error": {
-      "description": "Always null here: a refusal is an error result.",
-      "type": [
-        "string",
-        "null"
-      ],
-      "default": null
-    },
-    "hint": {
-      "description": "Always null here: a refusal is an error result.",
-      "type": [
-        "string",
-        "null"
-      ],
-      "default": null
     }
   },
   "required": [
@@ -633,14 +663,36 @@ Names the lines that contain a text, with the file and the line number of each. 
   "type": "object",
   "properties": {
     "ok": {
-      "description": "true: the call did what was asked. A refusal comes as an error result with ok false, error and hint.",
+      "description": "true: the call did what was asked. A refusal is an error result with ok false, error, hint and type in its text alone.",
       "type": "boolean"
     },
-    "data": {
+    "error": {
+      "description": "Why the call did not go through; present only on a refusal, which is an error result.",
       "type": [
-        "object",
+        "string",
         "null"
       ],
+      "default": null
+    },
+    "hint": {
+      "description": "What to do about a refusal; present only on one.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "type": {
+      "description": "The kind of refusal, a word a program can branch on; present only on one.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
+    },
+    "data": {
+      "description": "What the tool answers.",
+      "type": "object",
       "properties": {
         "query": {
           "description": "The text searched for.",
@@ -697,22 +749,6 @@ Names the lines that contain a text, with the file and the line number of each. 
         "unread",
         "note"
       ]
-    },
-    "error": {
-      "description": "Always null here: a refusal is an error result.",
-      "type": [
-        "string",
-        "null"
-      ],
-      "default": null
-    },
-    "hint": {
-      "description": "Always null here: a refusal is an error result.",
-      "type": [
-        "string",
-        "null"
-      ],
-      "default": null
     }
   },
   "required": [

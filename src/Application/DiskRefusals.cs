@@ -6,13 +6,13 @@ namespace Snail.MCP.FileSystem.Application;
 /// <summary>What the disk throws, answered as the refusal it is.</summary>
 internal static class DiskRefusals
 {
-    /// <summary>An exception of the disk as the refusal it is, since every answer of this server is its own JSON.</summary>
+    /// <summary>An exception of the disk as the refusal it is, in the disk's own words and with what to do instead.</summary>
     /// <remarks>
-    /// Thrown out of a tool, an exception reached the model as the SDK's "An error occurred invoking 'read_file'." — no
-    /// reason and no hint, in a shape the model had never seen from this server. The disk failing is not impossible, so
-    /// it is an answer: a file gone between listing and reading, a folder where a file was named, a permission.
+    /// Thrown out of a tool, an exception would be answered by <c>ExplainFailures</c> as a failure nobody foresaw, type
+    /// <c>internal</c> with "try once more" — the wrong advice for a file gone between listing and reading, a folder where
+    /// a file was named, a permission. The disk failing is not impossible, so it is an answer.
     /// </remarks>
-    public static Answer Guarded(string? path, Func<Answer> answer)
+    public static Answer<JsonObject> Guarded(string? path, Func<Answer<JsonObject>> answer)
     {
         try
         {

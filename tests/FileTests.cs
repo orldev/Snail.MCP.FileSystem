@@ -1,4 +1,3 @@
-using System.Text.Json.Nodes;
 using Snail.MCP.FileSystem.Tests.Support;
 
 namespace Snail.MCP.FileSystem.Tests;
@@ -12,11 +11,11 @@ public sealed class FileTests
         using var copy = new Copy();
         copy.Write("src/App.cs", "one\ntwo\nthree\n");
 
-        Answer answer = copy.Files.Read("src/App.cs", null, null);
+        Answer<JsonObject> answer = copy.Files.Read("src/App.cs", null, null);
 
         Assert.True(answer.IsSuccess);
-        Assert.Equal(3, answer.Data!["lines"]!.GetValue<int>());
-        Assert.Contains("two", answer.Data!["text"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal(3, answer.Value!["lines"]!.GetValue<int>());
+        Assert.Contains("two", answer.Value!["text"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     /// <summary>A file not needed whole is read by lines: the answer says which lines it holds.</summary>
@@ -26,11 +25,11 @@ public sealed class FileTests
         using var copy = new Copy();
         copy.Write("src/App.cs", "one\ntwo\nthree\nfour\n");
 
-        Answer answer = copy.Files.Read("src/App.cs", 2, 3);
+        Answer<JsonObject> answer = copy.Files.Read("src/App.cs", 2, 3);
 
-        Assert.Equal("two\nthree", answer.Data!["text"]!.GetValue<string>());
-        Assert.Equal(2, answer.Data!["from"]!.GetValue<int>());
-        Assert.Equal(3, answer.Data!["to"]!.GetValue<int>());
+        Assert.Equal("two\nthree", answer.Value!["text"]!.GetValue<string>());
+        Assert.Equal(2, answer.Value!["from"]!.GetValue<int>());
+        Assert.Equal(3, answer.Value!["to"]!.GetValue<int>());
     }
 
     [Fact]
@@ -38,10 +37,10 @@ public sealed class FileTests
     {
         using var copy = new Copy();
 
-        Answer answer = copy.Files.Write("deep/inside/New.cs", "class New;");
+        Answer<JsonObject> answer = copy.Files.Write("deep/inside/New.cs", "class New;");
 
         Assert.True(answer.IsSuccess);
-        Assert.True(answer.Data!["isCreated"]!.GetValue<bool>());
+        Assert.True(answer.Value!["isCreated"]!.GetValue<bool>());
         Assert.Equal("class New;", File.ReadAllText(Path.Combine(copy.Root, "deep/inside/New.cs")));
     }
 
@@ -55,7 +54,7 @@ public sealed class FileTests
         using var copy = new Copy();
         copy.Write("App.cs", "var x = 1;");
 
-        Answer answer = copy.Files.Edit("App.cs", "var y = 2;", "var y = 3;", all: false);
+        Answer<JsonObject> answer = copy.Files.Edit("App.cs", "var y = 2;", "var y = 3;", all: false);
 
         Assert.False(answer.IsSuccess);
         Assert.Contains("does not contain", answer.Error, StringComparison.Ordinal);
@@ -71,10 +70,10 @@ public sealed class FileTests
 
         Assert.False(copy.Files.Edit("App.cs", "log()", "trace()", all: false).IsSuccess);
 
-        Answer both = copy.Files.Edit("App.cs", "log()", "trace()", all: true);
+        Answer<JsonObject> both = copy.Files.Edit("App.cs", "log()", "trace()", all: true);
 
         Assert.True(both.IsSuccess);
-        Assert.Equal(2, both.Data!["replaced"]!.GetValue<int>());
+        Assert.Equal(2, both.Value!["replaced"]!.GetValue<int>());
         Assert.Equal("trace(); trace();", File.ReadAllText(Path.Combine(copy.Root, "App.cs")));
     }
 
@@ -85,7 +84,7 @@ public sealed class FileTests
         copy.Write("src/App.cs", "");
         copy.Write("obj/Debug/App.g.cs", "");
 
-        var paths = copy.Files.List(null, 3).Data!["entries"]!.AsArray()
+        var paths = copy.Files.List(null, 3).Value!["entries"]!.AsArray()
             .Select(entry => entry!["path"]!.GetValue<string>())
             .ToList();
 
@@ -104,7 +103,7 @@ public sealed class FileTests
         copy.Write("src/Tests/AppTests.cs", "");
         copy.Write("appsettings.Development.json", "{}");
 
-        var found = copy.Files.Find(pattern, null).Data!["files"]!.AsArray()
+        var found = copy.Files.Find(pattern, null).Value!["files"]!.AsArray()
             .Select(file => file!.GetValue<string>().Replace('\\', '/'))
             .ToList();
 
@@ -117,7 +116,7 @@ public sealed class FileTests
         using var copy = new Copy();
         copy.Write("src/App.cs", "using System;\nvar wanted = 1;\n");
 
-        JsonArray matches = copy.Files.Search("wanted", null, null).Data!["matches"]!.AsArray();
+        JsonArray matches = copy.Files.Search("wanted", null, null).Value!["matches"]!.AsArray();
 
         JsonNode? first = Assert.Single(matches);
 
@@ -131,7 +130,7 @@ public sealed class FileTests
     {
         using var copy = new Copy(config => config.AllowWrite = false);
 
-        Answer answer = copy.Files.Write("App.cs", "class App;");
+        Answer<JsonObject> answer = copy.Files.Write("App.cs", "class App;");
 
         Assert.False(answer.IsSuccess);
         Assert.Contains("read-only", answer.Error, StringComparison.Ordinal);

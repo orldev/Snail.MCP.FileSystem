@@ -34,12 +34,12 @@ public sealed class BoundsChaosTests
         }
 
         long before = GC.GetAllocatedBytesForCurrentThread();
-        Answer answer = copy.Files.Read("bundle.min.js", 1, 1);
+        Answer<JsonObject> answer = copy.Files.Read("bundle.min.js", 1, 1);
         long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
 
         Assert.True(answer.IsSuccess, answer.Error);
         Assert.True(allocated < 16L * 1024 * 1024, $"one line of a 48 MB file allocated {allocated / (1024 * 1024)} MB for an answer of {copy.Config.OutputLimitChars} characters");
-        Assert.True(answer.Data!["isCut"]!.GetValue<bool>());
+        Assert.True(answer.Value!["isCut"]!.GetValue<bool>());
     }
 
     /// <summary>
@@ -68,7 +68,7 @@ public sealed class BoundsChaosTests
         using var copy = new Copy(config => config.MaxFileBytes = 1024);
         copy.Write("big.txt", $"{new string('x', 4096)}\nneedle\n");
 
-        Answer answer = copy.Files.Edit("big.txt", "needle", "pin", all: false);
+        Answer<JsonObject> answer = copy.Files.Edit("big.txt", "needle", "pin", all: false);
 
         Assert.False(answer.IsSuccess, "edit_file read and rewrote a file four times larger than MaxFileBytes");
         Assert.Contains("needle", File.ReadAllText(Path.Combine(copy.Root, "big.txt")), StringComparison.Ordinal);
@@ -91,11 +91,11 @@ public sealed class BoundsChaosTests
             await made.WaitForExitAsync();
         }
 
-        Task<Answer> edit = Task.Run(() => copy.Files.Edit("pipe", "a", "b", all: false));
+        Task<Answer<JsonObject>> edit = Task.Run(() => copy.Files.Edit("pipe", "a", "b", all: false));
 
         try
         {
-            Answer answer = await edit.WaitAsync(TimeSpan.FromSeconds(3));
+            Answer<JsonObject> answer = await edit.WaitAsync(TimeSpan.FromSeconds(3));
 
             Assert.False(answer.IsSuccess);
         }
@@ -122,7 +122,7 @@ public sealed class BoundsChaosTests
         copy.Write($"{new string('a', 64)}.txt", "x");
 
         var clock = Stopwatch.StartNew();
-        Answer? answer = null;
+        Answer<JsonObject>? answer = null;
         Exception? thrown = Record.Exception(() => answer = copy.Files.Find("*a*a*a*a*a*a*a*a*a*a*a*a*a*a*b", null));
 
         Assert.True(thrown is null, $"find_files threw {thrown?.GetType().Name} after {clock.ElapsedMilliseconds} ms");

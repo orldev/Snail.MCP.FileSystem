@@ -6,6 +6,10 @@ namespace Snail.MCP.FileSystem.Configuration;
 /// process can read, so it refuses every path that is not inside one of them. A session states its own
 /// root in the address it opens — that is what lets one server stand behind several agents — and these
 /// stand when it states none, which is how a server started as a program for one caller is confined.
+/// <para>
+/// Where the server answers — stdio, or HTTP at a port on loopback or every interface — is not here but Snail.Sdk's
+/// <see cref="Snail.Sdk.Mcp.Hosting.McpEndpoint"/>, read from the same settings (<see cref="ServerConfigExtensions.EndpointOf"/>).
+/// </para>
 /// </remarks>
 public sealed class ServerConfig
 {
@@ -14,22 +18,6 @@ public sealed class ServerConfig
 
     /// <summary>Absolute paths the agent may read and write; nothing outside them is reachable.</summary>
     public IReadOnlyList<string> Roots { get; set; } = [];
-
-    /// <summary>Port to answer on; none means the server is started as a program and speaks stdio.</summary>
-    /// <remarks>
-    /// One knob decides the whole shape of the process, because the two shapes serve different callers:
-    /// at an address it stands behind every worker of a machine and each session names its own copy, as a
-    /// program it belongs to one caller and is confined by <see cref="Roots"/>.
-    /// </remarks>
-    public int Port { get; set; }
-
-    /// <summary>Whether the port is opened on every interface rather than on loopback alone; the container image turns it on.</summary>
-    /// <remarks>
-    /// Off by default. On every interface there is no credential to ask for: the only refusal is of a request carrying
-    /// <c>Origin</c>. In a container the published port is the boundary; a port given on a developer's machine served the
-    /// roots, writable by default, to the whole network.
-    /// </remarks>
-    public bool ListensOnEveryInterface { get; set; }
 
     /// <summary>Whether writing exists at all; a role that only reads is given a server that only reads.</summary>
     public bool AllowWrite { get; set; } = true;
@@ -43,7 +31,7 @@ public sealed class ServerConfig
     /// <summary>Matches one search may return; a query that matches everything answers nothing useful.</summary>
     public int MaxMatches { get; set; } = 200;
 
-    /// <summary>Steps one run_tools call may take.</summary>
+    /// <summary>Steps one run_tools call may take; Snail.Sdk's run_tools is held to it.</summary>
     public int StepLimit { get; set; } = 20;
 
     /// <summary>Folder names never walked into, because nobody means them and they are enormous.</summary>

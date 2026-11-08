@@ -13,5 +13,5 @@ A local MCP server that lets an AI agent read, write and search the files of the
 | [`list_directory`](files.md#list_directory) | Files of the working copy | Lists what is under a folder, to the depth asked for. |
 | [`find_files`](files.md#find_files) | Files of the working copy | Names the files whose path matches a glob: *.cs, **/Tests/*.cs, appsettings.*.json. |
 | [`search_text`](files.md#search_text) | Files of the working copy | Names the lines that contain a text, with the file and the line number of each. |
-| [`find_tool`](discovery.md#find_tool) | Finding a tool | Names the tools that answer a task described in words, with the parameters each takes. |
-| [`run_tools`](sequence.md#run_tools) | Several tools in one call | Runs several of this server's tools in one call, in order, stopping at the first failure. |
+| [`find_tool`](discovery.md#find_tool) | Finding a tool | Finds tools of this server for a task in words, best first, with the parameters of each. |
+| [`run_tools`](sequence.md#run_tools) | Several tools in one call | Runs tools of this server in order in one call, stopping at the first failure; no step sees an earlier answer. |

@@ -16,26 +16,28 @@ public sealed class CopyWriter(SessionRoots roots, ServerConfig config, IWorking
     private static readonly object[] Stripes = [.. Enumerable.Range(0, 64).Select(_ => new object())];
 
     /// <summary>Writes a file whole, making the folders above it.</summary>
-    public Answer Write(string? path, string? text) => DiskRefusals.Guarded(path, () => Writing(path, text));
+    public Answer<JsonObject> Write(string? path, string? text) => DiskRefusals.Guarded(path, () => Writing(path, text));
 
     /// <summary>Replaces an exact piece of a file, and says how many times it did.</summary>
-    public Answer Edit(string? path, string? find, string? replace, bool all) => DiskRefusals.Guarded(path, () => Editing(path, find, replace, all));
+    public Answer<JsonObject> Edit(string? path, string? find, string? replace, bool all) => DiskRefusals.Guarded(path, () => Editing(path, find, replace, all));
 
-    private Answer Writing(string? path, string? text)
+    private Answer<JsonObject> Writing(string? path, string? text)
     {
         if (!config.AllowWrite)
         {
-            return Answer.Failed("this server was started read-only", "a role that writes needs a server with writing turned on");
+            return Answer.Failed<JsonObject>("this server was started read-only", "a role that writes needs a server with writing turned on");
         }
 
-        if (roots.Reach(path) is not { IsAllowed: true } reached)
+        Reached reached = roots.Reach(path);
+
+        if (!reached.IsAllowed)
         {
-            return roots.Refusal(path);
+            return reached.As<JsonObject>();
         }
 
         if (disk.IsFolder(reached.Path!))
         {
-            return Answer.Failed($"'{roots.Relative(reached.Path!)}' is a folder", "name a file inside it");
+            return Answer.Failed<JsonObject>($"'{roots.Relative(reached.Path!)}' is a folder", "name a file inside it");
         }
 
         disk.MakeFolder(Path.GetDirectoryName(reached.Path!)!);
@@ -64,26 +66,23 @@ public sealed class CopyWriter(SessionRoots roots, ServerConfig config, IWorking
     /// replacement that matches nothing is refused instead of written, because the caller believed the
     /// file said something it does not.
     /// </remarks>
-    private Answer Editing(string? path, string? find, string? replace, bool all)
+    private Answer<JsonObject> Editing(string? path, string? find, string? replace, bool all)
     {
         if (!config.AllowWrite)
         {
-            return Answer.Failed("this server was started read-only", "a role that writes needs a server with writing turned on");
+            return Answer.Failed<JsonObject>("this server was started read-only", "a role that writes needs a server with writing turned on");
         }
 
         if (string.IsNullOrEmpty(find))
         {
-            return Answer.Failed("name the text to replace", "edit_file replaces exact text, so give enough of it to be unique");
+            return Answer.Failed<JsonObject>("name the text to replace", "edit_file replaces exact text, so give enough of it to be unique");
         }
 
-        if (roots.Reach(path) is not { IsAllowed: true } reached)
-        {
-            return roots.Refusal(path);
-        }
+        Reached reached = roots.Reach(path, PathKind.File);
 
-        if (!disk.IsFile(reached.Path!))
+        if (!reached.IsAllowed)
         {
-            return Answer.Failed($"'{roots.Relative(reached.Path!)}' is not a file");
+            return reached.As<JsonObject>();
         }
 
         lock (Stripe(reached.Path!))
@@ -104,18 +103,18 @@ public sealed class CopyWriter(SessionRoots roots, ServerConfig config, IWorking
     /// A file past <c>MaxFileBytes</c> is not read either, as <c>read_file</c> does not read one whole: held as bytes and
     /// twice as text, a generated file of a gigabyte or two took the shared server's memory.
     /// </remarks>
-    private Answer Replaced(string path, string find, string replace, bool all)
+    private Answer<JsonObject> Replaced(string path, string find, string replace, bool all)
     {
         long length = disk.Length(path);
 
         if (length == 0)
         {
-            return Answer.Failed($"'{roots.Relative(path)}' does not contain that text", "the file is empty, or is not a file that holds text");
+            return Answer.Failed<JsonObject>($"'{roots.Relative(path)}' does not contain that text", "the file is empty, or is not a file that holds text");
         }
 
         if (length > config.MaxFileBytes)
         {
-            return Answer.Failed($"'{roots.Relative(path)}' is larger than {config.MaxFileBytes} bytes", "write it whole with write_file, or ask whoever runs the server for a larger MaxFileBytes");
+            return Answer.Failed<JsonObject>($"'{roots.Relative(path)}' is larger than {config.MaxFileBytes} bytes", "write it whole with write_file, or ask whoever runs the server for a larger MaxFileBytes");
         }
 
         byte[] bytes = disk.Bytes(path);
@@ -124,14 +123,14 @@ public sealed class CopyWriter(SessionRoots roots, ServerConfig config, IWorking
 
         if (Spelled(before, find) is not { } wanted)
         {
-            return Answer.Failed($"'{roots.Relative(path)}' does not contain that text", "read the file first; whitespace counts");
+            return Answer.Failed<JsonObject>($"'{roots.Relative(path)}' does not contain that text", "read the file first; whitespace counts");
         }
 
         int found = Occurrences(before, wanted);
 
         if (found > 1 && !all)
         {
-            return Answer.Failed($"that text appears {found} times in '{roots.Relative(path)}'", "give more of it, or pass all to replace every one");
+            return Answer.Failed<JsonObject>($"that text appears {found} times in '{roots.Relative(path)}'", "give more of it, or pass all to replace every one");
         }
 
         string with = EndedLike(before, wanted, replace);
@@ -139,7 +138,7 @@ public sealed class CopyWriter(SessionRoots roots, ServerConfig config, IWorking
 
         if (codec.Encode(bytes, after) is not { } written)
         {
-            return Answer.Failed($"'{roots.Relative(path)}' is not UTF-8, and the replacement holds letters its bytes cannot hold", "keep the replacement to ASCII, or write the file whole with write_file");
+            return Answer.Failed<JsonObject>($"'{roots.Relative(path)}' is not UTF-8, and the replacement holds letters its bytes cannot hold", "keep the replacement to ASCII, or write the file whole with write_file");
         }
 
         disk.Replace(path, written);

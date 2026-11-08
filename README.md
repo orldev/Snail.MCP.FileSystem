@@ -13,8 +13,9 @@ cannot destroy work it did not create.
 A filesystem server is one call away from every file its process can read. This one refuses every path
 that is not inside one of its roots, comparing full paths segment by segment so that a sibling whose
 name merely begins the same way is not mistaken for one inside, and **resolving every link along the
-path** so that a symlink in the middle of it cannot lead out. A server given no root serves nothing
-rather than serving the disk.
+path** so that a symlink in the middle of it cannot lead out — a link whose target is not there yet included: it is
+followed to where it leads, and a write through it lands there or is refused as outside the session. A server given no
+root serves nothing rather than serving the disk.
 
 **A link swapped in after the check leads nowhere.** The path is checked with its links resolved, and the file is
 then opened through its folder with no link allowed anywhere on the folder's path — `O_NOFOLLOW_ANY` on macOS,
@@ -28,20 +29,25 @@ that path and nothing else, which is what lets one server stand behind several a
 them reaching another's working copy; repeat `root` for more than one. `SNAIL_MCP_FILESYSTEM_ROOTS__0`
 is the volume those copies live in: a session naming a folder outside it is refused at the door, and a
 session that names none is served the volume itself — a server started as a program for one caller behaves
-as it always did. A request carrying an `Origin`, which a browser always sends and an agent never does, is
+as it always did. A server with no volume serves no session at all: a root a request names is refused at the door,
+naming the variable, even one this machine has, so at an address `SNAIL_MCP_FILESYSTEM_ROOTS__0` is required. A
+request carrying an `Origin`, which a browser always sends and an agent never does, is
 refused too.
 
 ## Two shapes, one server
 
-**As a program.** Started with no port, it speaks stdio to whatever started it, belongs to that one
+**As a program.** Started with no port and no transport, it speaks stdio to whatever started it, belongs to that one
 caller and is confined by `SNAIL_MCP_FILESYSTEM_ROOTS__0`. This is the shape a desktop client installs.
 
-**At an address.** Given `SNAIL_MCP_FILESYSTEM_PORT`, it serves sessions at `/mcp`, each naming its own copy in
-the URL. One server then stands behind every agent on the machine, and nothing in its image has to be repeated in
-theirs. It listens on loopback; the image turns on `SNAIL_MCP_FILESYSTEM_LISTENS_ON_EVERY_INTERFACE`, since a container's
-published port does not reach its loopback, and the published port is then the boundary: the endpoint asks for no
-credential, so publish it where only the agents reach it — `docker run -p 127.0.0.1:8820:8820`, or the stand's own
-network.
+**At an address.** Given `SNAIL_MCP_FILESYSTEM_PORT` — or `SNAIL_MCP_FILESYSTEM_TRANSPORT=Http` with
+`SNAIL_MCP_FILESYSTEM_URL` — it serves sessions at `/mcp`, each naming its own copy in the URL, and answers `/healthz`
+for a healthcheck. One server then stands behind every agent on the machine, and nothing in its image has to be
+repeated in theirs. It listens on loopback; inside a container (`DOTNET_RUNNING_IN_CONTAINER=true`, which the .NET
+images set) it listens on every interface, since a container's published port does not reach its loopback, and the
+published port is then the boundary: the endpoint asks for no credential, so publish it where only the agents reach
+it — `docker run -p 127.0.0.1:8820:8820`, or the stand's own network. Outside a container an address beyond loopback
+— `0.0.0.0`, a LAN address, `SNAIL_MCP_FILESYSTEM_LISTENS_ON_EVERY_INTERFACE` — stops it at start, naming the variable:
+with no credential, the network would be its only access control.
 
 The image runs as its `app` user (uid 1654), as every Snail image does, and the server writes as whoever runs it.
 Where the copies belong to another user, run it as that user: on the Swarm stand the workers write them as root, so
@@ -73,7 +79,8 @@ the first that exists of the chain every Snail MCP server reads ([Snail.Sdk](htt
 `~/.config/s3l-mcp-filesystem/config.json`, `~/.s3l-mcp-filesystem.json`. A setting of this machine goes into `~/.config/s3l-mcp-filesystem/config.json`, readable by you alone
 (`chmod 600`), never into a launchd job or a client's registration, which travel wherever they are copied. In the file
 `SNAIL_MCP_FILESYSTEM_ROOTS__0` is the first item of `"Roots"` and `SNAIL_MCP_FILESYSTEM_MAX_MATCHES` is
-`"MaxMatches"`; the fields may also be nested under `"Snail"`:
+`"MaxMatches"`; the fields may also be nested under `"Snail"`, the endpoint's among them, a field at the top of the
+file winning:
 
 ```json
 { "Roots": ["/path/to/your/copy"], "AllowWrite": false }
@@ -81,9 +88,11 @@ the first that exists of the chain every Snail MCP server reads ([Snail.Sdk](htt
 
 | Variable | Meaning |
 |---|---|
-| `SNAIL_MCP_FILESYSTEM_PORT` | Port to answer sessions on; unset means the server is started as a program and speaks stdio |
-| `SNAIL_MCP_FILESYSTEM_LISTENS_ON_EVERY_INTERFACE` | Whether that port is opened on every interface rather than on loopback; `true` in the image, `false` otherwise |
-| `SNAIL_MCP_FILESYSTEM_ROOTS__0` | Absolute path the agent may work in when the session names none; add `ROOTS__1` for more |
+| `SNAIL_MCP_FILESYSTEM_PORT` | Port to answer sessions on; unset, with no transport, means the server is started as a program and speaks stdio |
+| `SNAIL_MCP_FILESYSTEM_TRANSPORT` | `Stdio` or `Http`; decides even beside a port |
+| `SNAIL_MCP_FILESYSTEM_URL` | Where HTTP listens, `http://127.0.0.1:8820` unless set; a port replaces its port |
+| `SNAIL_MCP_FILESYSTEM_LISTENS_ON_EVERY_INTERFACE` | Refused outside a container, where the server stays on loopback; inside one it listens on every interface anyway |
+| `SNAIL_MCP_FILESYSTEM_ROOTS__0` | The volume the agent works in: a root a session names must lie inside it, a session that names none is served it whole, and without it no session is served; add `ROOTS__1` for more |
 | `SNAIL_MCP_FILESYSTEM_ALLOW_WRITE` | Whether `write_file` and `edit_file` do anything; `true` by default |
 | `SNAIL_MCP_FILESYSTEM_OUTPUT_LIMIT_CHARS` | Characters of file text one call may return before it is cut |
 | `SNAIL_MCP_FILESYSTEM_MAX_FILE_BYTES` | Bytes past which a file is not read as text at all |
@@ -115,17 +124,22 @@ folder they may not open, and name in the answer what they could not read, so an
 "nothing matched" when it was "nothing was looked at".
 
 **`run_tools` keeps the grant.** A session opened with `&tool=` names may use those tools and no others,
-whether it calls them itself or as steps of `run_tools`; and `run_tools` does not run itself.
+whether it calls them itself or as steps of `run_tools`, and is not shown the rest; `run_tools` does not run itself.
+A step is `{"tool": "read_file", "arguments": {"path": "src/App.cs"}}`.
 
 ## Every answer is JSON
 
 ```json
-{"ok": true, "data": {…}, "error": null, "hint": null}
+{"ok": true, "data": {…}}
+{"ok": false, "error": "…", "hint": "…", "type": "…"}
 ```
 
-A refusal is data, not a failed call: `ok` is false, `error` says what happened and `hint` says what to
-do about it. The same shape either way, because a model reads the shape it saw last.
+A refusal is data: `ok` is false, `error` says what happened, `hint` says what to do about it and `type`, when there is
+one, names the kind (`notGranted` for a tool the session was not given, `arguments` for a call the tool cannot take).
+The same shape either way, because a model reads the shape it saw last, and a refusal is flagged `isError` too. The
+envelope is Snail.Sdk's, the same in every server of the fleet; a field with no value is left out.
 
-Every tool lists the shape of what it answers as its `outputSchema`, and an answer that went through carries the
+Every file tool lists the shape of what it answers as its `outputSchema`, and an answer that went through carries the
 same object again as `structuredContent`, for a client that validates it or calls the tool typed. A refusal is an
-error result in text alone. The shapes are in the [tool reference](docs/reference/tools/index.md).
+error result in text alone. `find_tool` and `run_tools` are Snail.Sdk's and answer the same way: every tool this
+server lists has an output schema. The shapes are in the [tool reference](docs/reference/tools/index.md).

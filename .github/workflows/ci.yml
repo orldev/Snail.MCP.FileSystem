@@ -1,7 +1,8 @@
 name: build and tests
 
 # The shared server CI of Snail.Sdk: the tests, the conformance check and the reference; the native program built for
-# each platform it ships to and asked over stdio where it runs. The container image is image.yml.
+# each platform it ships to and asked over stdio and over HTTP where it runs — every contract test, the shared
+# workflow's filter. The container image is image.yml.
 
 on:
   push:
@@ -16,4 +17,3 @@ jobs:
     uses: orldev/Snail.Sdk/.github/workflows/mcp-ci.yml@v1
     with:
       contract-variable: SNAIL_FILESYSTEM_SERVER
-      contract-filter: FullyQualifiedName~StdioContract

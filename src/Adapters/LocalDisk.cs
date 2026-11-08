@@ -18,10 +18,38 @@ public sealed class LocalDisk : IWorkingCopy
     };
 
     /// <inheritdoc/>
-    public bool IsFile(string path) => File.Exists(path);
+    public bool IsFile(string path) => Attributes(path) is { } attributes && !attributes.HasFlag(FileAttributes.Directory);
 
     /// <inheritdoc/>
-    public bool IsFolder(string path) => Directory.Exists(path);
+    public bool IsFolder(string path) => Attributes(path) is { } attributes && attributes.HasFlag(FileAttributes.Directory);
+
+    /// <inheritdoc/>
+    /// <remarks>
+    /// Read by name, not through <see cref="LinklessDisk"/>: this is how <c>SessionRoots.Reach</c> follows the links of a path
+    /// before the path is used, and <see cref="LinklessDisk"/> is what refuses a link found on it afterwards.
+    /// </remarks>
+    public string? LinkTarget(string path) => new FileInfo(path).LinkTarget;
+
+    /// <summary>What is at the path, or null when nothing is; a path the system may not look at throws rather than reads as missing.</summary>
+    /// <remarks>
+    /// <c>File.Exists</c> and <c>Directory.Exists</c> answer false for a file in a folder this process may not enter, so
+    /// <c>Reach</c> told the model "there is no file" about a file that is there, as Snail.Sdk's own disk did before it
+    /// answered <c>unreadable</c>. A name under a file is still missing: nothing can be under a file, and the system says so
+    /// as a folder not found.
+    /// </remarks>
+    /// <exception cref="UnauthorizedAccessException">The system may not look at the path.</exception>
+    /// <exception cref="IOException">The disk failed while it was asked.</exception>
+    private static FileAttributes? Attributes(string path)
+    {
+        try
+        {
+            return File.GetAttributes(path);
+        }
+        catch (Exception missing) when (missing is FileNotFoundException or DirectoryNotFoundException or ArgumentException)
+        {
+            return null;
+        }
+    }
 
     /// <inheritdoc/>
     public long Length(string path) => OperatingSystem.IsWindows() ? new FileInfo(path).Length : LinklessDisk.Length(path);
@@ -112,12 +140,6 @@ public sealed class LocalDisk : IWorkingCopy
 
         return new Contents(files, folders);
     }
-
-    /// <inheritdoc/>
-    public string? LinkTarget(string path) =>
-        (Directory.Exists(path)
-            ? new DirectoryInfo(path).ResolveLinkTarget(returnFinalTarget: true)
-            : new FileInfo(path).ResolveLinkTarget(returnFinalTarget: true))?.FullName;
 
     /// <inheritdoc/>
     public void MakeFolder(string path)

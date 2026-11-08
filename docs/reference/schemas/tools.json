@@ -34,14 +34,36 @@
       "type": "object",
       "properties": {
         "ok": {
-          "description": "true: the call did what was asked. A refusal comes as an error result with ok false, error and hint.",
+          "description": "true: the call did what was asked. A refusal is an error result with ok false, error, hint and type in its text alone.",
           "type": "boolean"
         },
-        "data": {
+        "error": {
+          "description": "Why the call did not go through; present only on a refusal, which is an error result.",
           "type": [
-            "object",
+            "string",
             "null"
           ],
+          "default": null
+        },
+        "hint": {
+          "description": "What to do about a refusal; present only on one.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "type": {
+          "description": "The kind of refusal, a word a program can branch on; present only on one.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "data": {
+          "description": "What the tool answers.",
+          "type": "object",
           "properties": {
             "path": {
               "description": "The file, relative to the session\u0027s root.",
@@ -76,22 +98,6 @@
             "text",
             "isCut"
           ]
-        },
-        "error": {
-          "description": "Always null here: a refusal is an error result.",
-          "type": [
-            "string",
-            "null"
-          ],
-          "default": null
-        },
-        "hint": {
-          "description": "Always null here: a refusal is an error result.",
-          "type": [
-            "string",
-            "null"
-          ],
-          "default": null
         }
       },
       "required": [
@@ -129,14 +135,36 @@
       "type": "object",
       "properties": {
         "ok": {
-          "description": "true: the call did what was asked. A refusal comes as an error result with ok false, error and hint.",
+          "description": "true: the call did what was asked. A refusal is an error result with ok false, error, hint and type in its text alone.",
           "type": "boolean"
         },
-        "data": {
+        "error": {
+          "description": "Why the call did not go through; present only on a refusal, which is an error result.",
           "type": [
-            "object",
+            "string",
             "null"
           ],
+          "default": null
+        },
+        "hint": {
+          "description": "What to do about a refusal; present only on one.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "type": {
+          "description": "The kind of refusal, a word a program can branch on; present only on one.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "data": {
+          "description": "What the tool answers.",
+          "type": "object",
           "properties": {
             "path": {
               "description": "The file, relative to the session\u0027s root.",
@@ -156,22 +184,6 @@
             "isCreated",
             "bytes"
           ]
-        },
-        "error": {
-          "description": "Always null here: a refusal is an error result.",
-          "type": [
-            "string",
-            "null"
-          ],
-          "default": null
-        },
-        "hint": {
-          "description": "Always null here: a refusal is an error result.",
-          "type": [
-            "string",
-            "null"
-          ],
-          "default": null
         }
       },
       "required": [
@@ -219,14 +231,36 @@
       "type": "object",
       "properties": {
         "ok": {
-          "description": "true: the call did what was asked. A refusal comes as an error result with ok false, error and hint.",
+          "description": "true: the call did what was asked. A refusal is an error result with ok false, error, hint and type in its text alone.",
           "type": "boolean"
         },
-        "data": {
+        "error": {
+          "description": "Why the call did not go through; present only on a refusal, which is an error result.",
           "type": [
-            "object",
+            "string",
             "null"
           ],
+          "default": null
+        },
+        "hint": {
+          "description": "What to do about a refusal; present only on one.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "type": {
+          "description": "The kind of refusal, a word a program can branch on; present only on one.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "data": {
+          "description": "What the tool answers.",
+          "type": "object",
           "properties": {
             "path": {
               "description": "The file, relative to the session\u0027s root.",
@@ -246,22 +280,6 @@
             "replaced",
             "bytes"
           ]
-        },
-        "error": {
-          "description": "Always null here: a refusal is an error result.",
-          "type": [
-            "string",
-            "null"
-          ],
-          "default": null
-        },
-        "hint": {
-          "description": "Always null here: a refusal is an error result.",
-          "type": [
-            "string",
-            "null"
-          ],
-          "default": null
         }
       },
       "required": [
@@ -300,14 +318,36 @@
       "type": "object",
       "properties": {
         "ok": {
-          "description": "true: the call did what was asked. A refusal comes as an error result with ok false, error and hint.",
+          "description": "true: the call did what was asked. A refusal is an error result with ok false, error, hint and type in its text alone.",
           "type": "boolean"
         },
-        "data": {
+        "error": {
+          "description": "Why the call did not go through; present only on a refusal, which is an error result.",
           "type": [
-            "object",
+            "string",
             "null"
           ],
+          "default": null
+        },
+        "hint": {
+          "description": "What to do about a refusal; present only on one.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "type": {
+          "description": "The kind of refusal, a word a program can branch on; present only on one.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "data": {
+          "description": "What the tool answers.",
+          "type": "object",
           "properties": {
             "path": {
               "description": "The folder listed, relative to the session\u0027s root.",
@@ -364,22 +404,6 @@
             "unread",
             "note"
           ]
-        },
-        "error": {
-          "description": "Always null here: a refusal is an error result.",
-          "type": [
-            "string",
-            "null"
-          ],
-          "default": null
-        },
-        "hint": {
-          "description": "Always null here: a refusal is an error result.",
-          "type": [
-            "string",
-            "null"
-          ],
-          "default": null
         }
       },
       "required": [
@@ -420,14 +444,36 @@
       "type": "object",
       "properties": {
         "ok": {
-          "description": "true: the call did what was asked. A refusal comes as an error result with ok false, error and hint.",
+          "description": "true: the call did what was asked. A refusal is an error result with ok false, error, hint and type in its text alone.",
           "type": "boolean"
         },
-        "data": {
+        "error": {
+          "description": "Why the call did not go through; present only on a refusal, which is an error result.",
           "type": [
-            "object",
+            "string",
             "null"
           ],
+          "default": null
+        },
+        "hint": {
+          "description": "What to do about a refusal; present only on one.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "type": {
+          "description": "The kind of refusal, a word a program can branch on; present only on one.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "data": {
+          "description": "What the tool answers.",
+          "type": "object",
           "properties": {
             "pattern": {
               "description": "The pattern as matched.",
@@ -466,22 +512,6 @@
             "unread",
             "note"
           ]
-        },
-        "error": {
-          "description": "Always null here: a refusal is an error result.",
-          "type": [
-            "string",
-            "null"
-          ],
-          "default": null
-        },
-        "hint": {
-          "description": "Always null here: a refusal is an error result.",
-          "type": [
-            "string",
-            "null"
-          ],
-          "default": null
         }
       },
       "required": [
@@ -530,14 +560,36 @@
       "type": "object",
       "properties": {
         "ok": {
-          "description": "true: the call did what was asked. A refusal comes as an error result with ok false, error and hint.",
+          "description": "true: the call did what was asked. A refusal is an error result with ok false, error, hint and type in its text alone.",
           "type": "boolean"
         },
-        "data": {
+        "error": {
+          "description": "Why the call did not go through; present only on a refusal, which is an error result.",
           "type": [
-            "object",
+            "string",
             "null"
           ],
+          "default": null
+        },
+        "hint": {
+          "description": "What to do about a refusal; present only on one.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "type": {
+          "description": "The kind of refusal, a word a program can branch on; present only on one.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
+        },
+        "data": {
+          "description": "What the tool answers.",
+          "type": "object",
           "properties": {
             "query": {
               "description": "The text searched for.",
@@ -594,22 +646,6 @@
             "unread",
             "note"
           ]
-        },
-        "error": {
-          "description": "Always null here: a refusal is an error result.",
-          "type": [
-            "string",
-            "null"
-          ],
-          "default": null
-        },
-        "hint": {
-          "description": "Always null here: a refusal is an error result.",
-          "type": [
-            "string",
-            "null"
-          ],
-          "default": null
         }
       },
       "required": [
@@ -625,104 +661,140 @@
   },
   {
     "name": "find_tool",
-    "description": "Names the tools that answer a task described in words, with the parameters each takes.",
+    "description": "Finds tools of this server for a task in words, best first, with the parameters of each. Ask it before deciding that no tool exists.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "task": {
-          "description": "What you are trying to do, in words: \u0027change one line\u0027, \u0027where is this text\u0027.",
-          "type": "string"
+          "description": "What you are trying to do, in words.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
         },
         "limit": {
-          "description": "How many tools to name; five by default.",
+          "description": "How many tools to name, 1 to 20.",
           "type": "integer",
           "default": 5
+        },
+        "intent": {
+          "description": "Same as task.",
+          "type": [
+            "string",
+            "null"
+          ],
+          "default": null
         }
-      },
-      "required": [
-        "task"
-      ]
+      }
     },
     "outputSchema": {
       "type": "object",
       "properties": {
-        "task": {
-          "description": "The task as asked.",
-          "type": [
-            "string",
-            "null"
-          ]
+        "ok": {
+          "type": "boolean",
+          "const": true
         },
-        "isMatched": {
-          "description": "Whether any tool matched; when none did, every tool is listed.",
-          "type": "boolean"
-        },
-        "note": {
-          "description": "Why every tool is listed; null when some matched.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "tools": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "name": {
-                "type": "string"
-              },
-              "description": {
-                "type": "string"
-              },
-              "parameters": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "properties": {
-                    "name": {
-                      "type": "string"
-                    },
-                    "type": {
-                      "description": "The JSON type of the value.",
-                      "type": "string"
-                    },
-                    "isRequired": {
-                      "description": "Whether the call must give it.",
-                      "type": "boolean"
-                    },
-                    "description": {
-                      "type": [
-                        "string",
-                        "null"
+        "data": {
+          "type": "object",
+          "properties": {
+            "task": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "isMatched": {
+              "type": "boolean"
+            },
+            "note": {
+              "type": "string"
+            },
+            "tools": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "command": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "parameters": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string"
+                        },
+                        "isRequired": {
+                          "type": "boolean"
+                        },
+                        "description": {
+                          "type": "string"
+                        },
+                        "fields": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "name",
+                              "type",
+                              "isRequired"
+                            ]
+                          }
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "type",
+                        "isRequired"
                       ]
                     }
                   },
-                  "required": [
-                    "name",
-                    "type",
-                    "isRequired",
-                    "description"
-                  ]
-                }
+                  "skill": {
+                    "type": "string"
+                  },
+                  "isLoaded": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "name",
+                  "description"
+                ]
               }
             },
-            "required": [
-              "name",
-              "description",
-              "parameters"
-            ]
-          }
+            "enabledSkills": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "task",
+            "isMatched",
+            "tools"
+          ]
         }
       },
       "required": [
-        "task",
-        "isMatched",
-        "note",
-        "tools"
+        "ok",
+        "data"
       ]
     },
     "annotations": {
+      "destructiveHint": false,
+      "idempotentHint": true,
       "openWorldHint": false,
       "readOnlyHint": true
     },
@@ -730,32 +802,34 @@
   },
   {
     "name": "run_tools",
-    "description": "Runs several of this server\u0027s tools in one call, in order, stopping at the first failure. For steps that do not depend on reading the previous answer. Each step is an ordinary tool call under the same grant; run_tools is not a step.",
+    "description": "Runs tools of this server in order in one call, stopping at the first failure; no step sees an earlier answer. An answer past the budget is flagged isOmitted: call that tool alone.",
     "inputSchema": {
       "type": "object",
       "properties": {
         "steps": {
-          "description": "Steps in order: {\u0022tool\u0022: \u0022read_file\u0022, \u0022params\u0022: {\u0022path\u0022: \u0022src/App.cs\u0022}}. Call find_tool for what a tool takes.",
+          "description": "The steps, in order.",
           "type": "array",
           "items": {
             "type": "object",
             "properties": {
               "tool": {
+                "description": "The tool to call.",
                 "type": [
                   "string",
                   "null"
                 ]
               },
-              "params": {
+              "arguments": {
+                "description": "The arguments of a direct call.",
                 "type": [
                   "object",
                   "null"
-                ]
+                ],
+                "default": null
               }
             },
             "required": [
-              "tool",
-              "params"
+              "tool"
             ]
           }
         }
@@ -768,87 +842,68 @@
       "type": "object",
       "properties": {
         "ok": {
-          "description": "Whether every step ran and went through.",
-          "type": "boolean"
+          "type": "boolean",
+          "const": true
         },
-        "ran": {
-          "description": "How many steps ran.",
-          "type": "integer"
-        },
-        "steps": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "tool": {
-                "description": "The tool the step called.",
-                "type": "string"
-              },
-              "ok": {
-                "description": "Whether the step went through.",
-                "type": "boolean"
-              },
-              "data": {
-                "default": null
-              },
-              "error": {
-                "description": "The tool\u0027s refusal; absent when it went through.",
-                "type": [
-                  "string",
-                  "null"
-                ],
-                "default": null
-              },
-              "isOmitted": {
-                "description": "Whether the answer was left out to stay inside the output budget; absent when it was not.",
-                "type": "boolean",
-                "default": false
+        "data": {
+          "type": "object",
+          "properties": {
+            "ran": {
+              "type": "integer"
+            },
+            "steps": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "tool": {
+                    "type": "string"
+                  },
+                  "ok": {
+                    "type": "boolean"
+                  },
+                  "data": {},
+                  "isOmitted": {
+                    "type": "boolean"
+                  },
+                  "error": {
+                    "type": "string"
+                  },
+                  "hint": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "tool",
+                  "ok"
+                ]
               }
             },
-            "required": [
-              "tool",
-              "ok"
-            ]
-          }
-        },
-        "omitted": {
-          "description": "How many answers were left out to stay inside the output budget.",
-          "type": "integer"
-        },
-        "note": {
-          "description": "Why answers were left out; null when none were.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "error": {
-          "description": "Why the run stopped; null when every step went through.",
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "hint": {
-          "description": "What to do about it; null when there is nothing to do.",
-          "type": [
-            "string",
-            "null"
+            "omitted": {
+              "type": "integer"
+            },
+            "note": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "ran",
+            "steps"
           ]
         }
       },
       "required": [
         "ok",
-        "ran",
-        "steps",
-        "omitted",
-        "note",
-        "error",
-        "hint"
+        "data"
       ]
     },
     "annotations": {
-      "destructiveHint": true
+      "destructiveHint": true,
+      "openWorldHint": false,
+      "readOnlyHint": false
     },
     "skill": null
   }

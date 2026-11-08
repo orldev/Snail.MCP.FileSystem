@@ -23,8 +23,8 @@ public sealed class TextChaosTests
         using var copy = new Copy();
         string path = copy.Write("mixed.cs", "// header\r\nfirst();\nsecond();\n");
 
-        string shown = copy.Files.Read("mixed.cs", 2, 3).Data!["text"]!.GetValue<string>();
-        Answer answer = copy.Files.Edit("mixed.cs", shown, "both();\nthird();", all: false);
+        string shown = copy.Files.Read("mixed.cs", 2, 3).Value!["text"]!.GetValue<string>();
+        Answer<JsonObject> answer = copy.Files.Edit("mixed.cs", shown, "both();\nthird();", all: false);
 
         Assert.True(answer.IsSuccess, answer.Error);
         Assert.Equal("// header\r\nboth();\nthird();\n", File.ReadAllText(path));
@@ -37,7 +37,7 @@ public sealed class TextChaosTests
         using var copy = new Copy();
         string path = copy.Write("App.cs", "first();\r\nsecond();\r\n");
 
-        Answer answer = copy.Files.Edit("App.cs", "first();", "one();\ntwo();", all: false);
+        Answer<JsonObject> answer = copy.Files.Edit("App.cs", "first();", "one();\ntwo();", all: false);
 
         Assert.True(answer.IsSuccess, answer.Error);
         Assert.Equal("one();\r\ntwo();\r\nsecond();\r\n", File.ReadAllText(path));
@@ -60,8 +60,8 @@ public sealed class TextChaosTests
         string path = copy.Write("resource.rc", string.Empty);
         File.WriteAllText(path, "caption = \"hello\"\n", encoding);
 
-        string shown = copy.Files.Read("resource.rc", null, null).Data!["text"]!.GetValue<string>();
-        Answer answer = copy.Files.Edit("resource.rc", "hello", "bye", all: false);
+        string shown = copy.Files.Read("resource.rc", null, null).Value!["text"]!.GetValue<string>();
+        Answer<JsonObject> answer = copy.Files.Edit("resource.rc", "hello", "bye", all: false);
 
         Assert.Equal("caption = \"hello\"", shown);
         Assert.True(answer.IsSuccess, answer.Error);
@@ -78,9 +78,9 @@ public sealed class TextChaosTests
         using var copy = new Copy();
         copy.Write("App.cs", "first();\nsecond();\n");
 
-        Answer answer = copy.Files.Search("first();\nsecond();", null, null);
+        Answer<JsonObject> answer = copy.Files.Search("first();\nsecond();", null, null);
 
-        bool isExplained = !answer.IsSuccess || answer.Data!["note"] is not null;
+        bool isExplained = !answer.IsSuccess || answer.Value!["note"] is not null;
         Assert.True(isExplained, "a query across lines answered as if the text were absent");
     }
 }

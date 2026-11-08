@@ -1,6 +1,4 @@
-using System.Text.Json.Nodes;
 using Snail.MCP.FileSystem.Tests.Support;
-using Snail.MCP.FileSystem.Tools;
 
 namespace Snail.MCP.FileSystem.Tests.Chaos;
 
@@ -20,8 +18,8 @@ public sealed class LimitChaosTests
         using var copy = new Copy(config => config.MaxFileBytes = 1024);
         copy.Write("big.log", string.Concat(Enumerable.Range(1, 200).Select(line => $"line {line}\n")));
 
-        Answer refused = copy.Files.Read("big.log", null, null);
-        Answer answer = copy.Files.Read("big.log", 1, 1);
+        Answer<JsonObject> refused = copy.Files.Read("big.log", null, null);
+        Answer<JsonObject> answer = copy.Files.Read("big.log", 1, 1);
 
         Assert.Contains("by lines", refused.Hint, StringComparison.Ordinal);
         Assert.True(answer.IsSuccess, answer.Error);
@@ -37,9 +35,9 @@ public sealed class LimitChaosTests
         using var copy = new Copy(config => config.MaxFileBytes = 1024);
         copy.Write("big.log", string.Concat(Enumerable.Range(1, 200).Select(line => $"line {line}\n")) + "needle\n");
 
-        Answer answer = copy.Files.Search("needle", null, null);
+        Answer<JsonObject> answer = copy.Files.Search("needle", null, null);
 
-        Assert.Contains("big.log", answer.Data!.ToJsonString(), StringComparison.Ordinal);
+        Assert.Contains("big.log", answer.Value!.ToJsonString(), StringComparison.Ordinal);
     }
 
     /// <summary>Exactly as many entries as the limit is everything there is, and the answer calls it cut.</summary>
@@ -51,10 +49,10 @@ public sealed class LimitChaosTests
         copy.Write("b.txt", "");
         copy.Write("c.txt", "");
 
-        Answer answer = copy.Files.Find("*.txt", null);
+        Answer<JsonObject> answer = copy.Files.Find("*.txt", null);
 
-        Assert.Equal(3, answer.Data!["files"]!.AsArray().Count);
-        Assert.False(answer.Data!["isCut"]!.GetValue<bool>());
+        Assert.Equal(3, answer.Value!["files"]!.AsArray().Count);
+        Assert.False(answer.Value!["isCut"]!.GetValue<bool>());
     }
 
     /// <summary>
@@ -68,7 +66,7 @@ public sealed class LimitChaosTests
         copy.Write("src/Tests/A.cs", "");
         copy.Write("src/UnitTests/B.cs", "");
 
-        var files = copy.Files.Find("**/Tests/*.cs", null).Data!["files"]!.AsArray()
+        var files = copy.Files.Find("**/Tests/*.cs", null).Value!["files"]!.AsArray()
             .Select(file => file!.GetValue<string>().Replace('\\', '/'))
             .ToList();
 
@@ -82,7 +80,7 @@ public sealed class LimitChaosTests
         using var copy = new Copy(config => config.OutputLimitChars = 5);
         copy.Write("notes.md", "abcd😀efgh");
 
-        string text = copy.Files.Read("notes.md", null, null).Data!["text"]!.GetValue<string>();
+        string text = copy.Files.Read("notes.md", null, null).Value!["text"]!.GetValue<string>();
 
         Assert.False(char.IsHighSurrogate(text[^1]), "the answer ends with half of a surrogate pair");
     }
@@ -103,9 +101,10 @@ public sealed class LimitChaosTests
     }
 
     /// <summary>
-    /// The answer is serialised with the default encoder, which escapes every non-ASCII letter and every <c>&lt;</c>,
-    /// <c>&gt;</c>, <c>&amp;</c>, <c>'</c> and <c>+</c> as a six-character escape: <c>List&lt;string&gt;</c> reaches the
-    /// model with both brackets escaped, a Cyrillic letter as six characters. The model reads, and pays for, the escapes.
+    /// The answer was serialised with the default encoder, which escapes every non-ASCII letter and every <c>&lt;</c>,
+    /// <c>&gt;</c>, <c>&amp;</c>, <c>'</c> and <c>+</c> as a six-character escape: <c>List&lt;string&gt;</c> reached the
+    /// model with both brackets escaped, a Cyrillic letter as six characters. The model reads, and pays for, the escapes;
+    /// Snail.Sdk's envelope, which writes the answer now, escapes nothing JSON allows.
     /// </summary>
     [Fact]
     public void ReadFile_CodeWithGenericsAndCyrillic_ReachesTheWireAsWritten()
@@ -114,7 +113,7 @@ public sealed class LimitChaosTests
         const string code = "List<string> names = ['первая строка']; if (a && b) c += 1;";
         copy.Write("App.cs", code);
 
-        string wire = ToolResponse.From(copy.Files.Read("App.cs", null, null)).Content.OfType<ModelContextProtocol.Protocol.TextContentBlock>().Single().Text;
+        string wire = ToolAnswer.From(copy.Files.Read("App.cs", null, null), AnswerShape.Envelope).Text();
         string text = JsonNode.Parse(wire)!["data"]!["text"]!.GetValue<string>();
 
         Assert.Equal(code, text);

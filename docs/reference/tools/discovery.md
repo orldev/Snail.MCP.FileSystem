@@ -2,14 +2,15 @@
 
 ## <code>find_<wbr>tool</code>
 
-Names the tools that answer a task described in words, with the parameters each takes.
+Finds tools of this server for a task in words, best first, with the parameters of each. Ask it before deciding that no tool exists.
 
-*read-only · every call adds · stays on this machine.*
+*read-only · repeat-safe · stays on this machine.*
 
 | Parameter | Type | Required | Default | Description |
 | --- | --- | --- | --- | --- |
-| `task` | `string` | yes | — | What you are trying to do, in words: 'change one line', 'where is this text'. |
-| `limit` | `integer` | — | `5` | How many tools to name; five by default. |
+| `task` | `string?` | — | `null` | What you are trying to do, in words. |
+| `limit` | `integer` | — | `5` | How many tools to name, 1 to 20. |
+| `intent` | `string?` | — | `null` | Same as task. |
 
 <details><summary>JSON Schema</summary>
 
@@ -18,18 +19,27 @@ Names the tools that answer a task described in words, with the parameters each 
   "type": "object",
   "properties": {
     "task": {
-      "description": "What you are trying to do, in words: \u0027change one line\u0027, \u0027where is this text\u0027.",
-      "type": "string"
+      "description": "What you are trying to do, in words.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
     },
     "limit": {
-      "description": "How many tools to name; five by default.",
+      "description": "How many tools to name, 1 to 20.",
       "type": "integer",
       "default": 5
+    },
+    "intent": {
+      "description": "Same as task.",
+      "type": [
+        "string",
+        "null"
+      ],
+      "default": null
     }
-  },
-  "required": [
-    "task"
-  ]
+  }
 }
 ```
 
@@ -41,80 +51,105 @@ Names the tools that answer a task described in words, with the parameters each 
 {
   "type": "object",
   "properties": {
-    "task": {
-      "description": "The task as asked.",
-      "type": [
-        "string",
-        "null"
-      ]
+    "ok": {
+      "type": "boolean",
+      "const": true
     },
-    "isMatched": {
-      "description": "Whether any tool matched; when none did, every tool is listed.",
-      "type": "boolean"
-    },
-    "note": {
-      "description": "Why every tool is listed; null when some matched.",
-      "type": [
-        "string",
-        "null"
-      ]
-    },
-    "tools": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "parameters": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "type": "string"
-                },
-                "type": {
-                  "description": "The JSON type of the value.",
-                  "type": "string"
-                },
-                "isRequired": {
-                  "description": "Whether the call must give it.",
-                  "type": "boolean"
-                },
-                "description": {
-                  "type": [
-                    "string",
-                    "null"
+    "data": {
+      "type": "object",
+      "properties": {
+        "task": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "isMatched": {
+          "type": "boolean"
+        },
+        "note": {
+          "type": "string"
+        },
+        "tools": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "command": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "parameters": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "type": {
+                      "type": "string"
+                    },
+                    "isRequired": {
+                      "type": "boolean"
+                    },
+                    "description": {
+                      "type": "string"
+                    },
+                    "fields": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "name",
+                          "type",
+                          "isRequired"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "type",
+                    "isRequired"
                   ]
                 }
               },
-              "required": [
-                "name",
-                "type",
-                "isRequired",
-                "description"
-              ]
-            }
+              "skill": {
+                "type": "string"
+              },
+              "isLoaded": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "name",
+              "description"
+            ]
           }
         },
-        "required": [
-          "name",
-          "description",
-          "parameters"
-        ]
-      }
+        "enabledSkills": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "task",
+        "isMatched",
+        "tools"
+      ]
     }
   },
   "required": [
-    "task",
-    "isMatched",
-    "note",
-    "tools"
+    "ok",
+    "data"
   ]
 }
 ```

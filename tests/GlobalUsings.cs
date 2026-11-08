@@ -1,6 +1,9 @@
 global using Snail.MCP.FileSystem.Application;
+global using System.Text.Json.Nodes;
 global using Snail.MCP.FileSystem.Application.Ports;
 global using Snail.MCP.FileSystem.Configuration;
 global using Snail.MCP.FileSystem.Domain;
 global using Xunit;
 global using Snail.Sdk.Mcp.Testing;
+global using Snail.Sdk.Mcp.Hosting.Answers;
+global using Snail.Sdk.Mcp.Hosting.Sessions;

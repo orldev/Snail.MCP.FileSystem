@@ -68,8 +68,8 @@ public sealed class PathChaosTests
 
         int attempts = await RacedAsync(copy, outside, () =>
         {
-            Answer answer = copy.Files.Read("real/notes.txt", null, null);
-            isShown = answer.IsSuccess && answer.Data!["text"]!.GetValue<string>().Contains("secret", StringComparison.Ordinal);
+            Answer<JsonObject> answer = copy.Files.Read("real/notes.txt", null, null);
+            isShown = answer.IsSuccess && answer.Value!["text"]!.GetValue<string>().Contains("secret", StringComparison.Ordinal);
 
             return isShown;
         });
@@ -90,8 +90,8 @@ public sealed class PathChaosTests
 
         int attempts = await RacedAsync(copy, outside, () =>
         {
-            Answer answer = copy.Files.Search("secret", null, null);
-            isShown = answer.IsSuccess && answer.Data!["matches"]!.AsArray().Count > 0;
+            Answer<JsonObject> answer = copy.Files.Search("secret", null, null);
+            isShown = answer.IsSuccess && answer.Value!["matches"]!.AsArray().Count > 0;
 
             return isShown;
         });
@@ -115,8 +115,8 @@ public sealed class PathChaosTests
 
         int attempts = await RacedAsync(copy, outside, () =>
         {
-            Answer answer = copy.Files.List(null, 2);
-            shown = answer.Data?.ToJsonString() ?? "";
+            Answer<JsonObject> answer = copy.Files.List(null, 2);
+            shown = answer.Value?.ToJsonString() ?? "";
 
             return shown.Contains("secret-of-another-task", StringComparison.Ordinal);
         });
@@ -137,8 +137,8 @@ public sealed class PathChaosTests
 
         int attempts = await RacedAsync(copy, outside, () =>
         {
-            Answer answer = copy.Files.Find("**/*.txt", null);
-            shown = answer.Data?.ToJsonString() ?? "";
+            Answer<JsonObject> answer = copy.Files.Find("**/*.txt", null);
+            shown = answer.Value?.ToJsonString() ?? "";
 
             return shown.Contains("secret-of-another-task", StringComparison.Ordinal);
         });
@@ -157,7 +157,7 @@ public sealed class PathChaosTests
     {
         using var copy = new Copy();
 
-        Answer[] answers = FolderByFolder<Answer[]>(() =>
+        Answer<JsonObject>[] answers = FolderByFolder<Answer<JsonObject>[]>(() =>
         [
             copy.Files.Write("made/deeper/notes.txt", "own notes"),
             copy.Files.Edit("made/deeper/notes.txt", "own", "edited", all: false),
@@ -165,7 +165,7 @@ public sealed class PathChaosTests
         ]);
 
         Assert.All(answers, answer => Assert.True(answer.IsSuccess, answer.Error));
-        Assert.Contains("edited notes", answers[2].Data!["text"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("edited notes", answers[2].Value!["text"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     /// <summary>Opened one folder at a time, a folder swapped for a link out of the copy is refused as <c>openat2</c> refuses it.</summary>
@@ -214,12 +214,12 @@ public sealed class PathChaosTests
         copy.Write("a.txt", "x");
         string link = Path.Combine(TestFolder.Create(), "copy");
         Directory.CreateSymbolicLink(link, copy.Root);
-        Files files = Copy.At(new ServerConfig { Roots = [link] }, new Address());
+        Files files = Copy.At(new ServerConfig { Roots = [link] }, Address.Of());
 
-        Answer answer = files.Read("a.txt", null, null);
+        Answer<JsonObject> answer = files.Read("a.txt", null, null);
 
         Assert.True(answer.IsSuccess, answer.Error);
-        Assert.Equal("a.txt", answer.Data!["path"]!.GetValue<string>());
+        Assert.Equal("a.txt", answer.Value!["path"]!.GetValue<string>());
     }
 
     /// <summary>
@@ -236,12 +236,12 @@ public sealed class PathChaosTests
         Directory.CreateDirectory(second);
         File.WriteAllText(Path.Combine(first, "a.txt"), "first");
         File.WriteAllText(Path.Combine(second, "a.txt"), "second");
-        Files files = Copy.At(new ServerConfig(), new Address(first, second));
+        Files files = Copy.At(new ServerConfig { Roots = [Path.GetTempPath()] }, Address.Of(first, second));
 
-        string named = files.Read(Path.Combine(second, "a.txt"), null, null).Data!["path"]!.GetValue<string>();
-        Answer again = files.Read(named, null, null);
+        string named = files.Read(Path.Combine(second, "a.txt"), null, null).Value!["path"]!.GetValue<string>();
+        Answer<JsonObject> again = files.Read(named, null, null);
 
-        Assert.Equal("second", again.Data!["text"]!.GetValue<string>());
+        Assert.Equal("second", again.Value!["text"]!.GetValue<string>());
     }
 
     /// <summary>
@@ -329,8 +329,7 @@ public sealed class PathChaosTests
     }
 
     /// <summary>The folder with every link on its path resolved, as the server resolves a root: on macOS the temporary folder is under the link <c>/var</c>.</summary>
-    private static string Real(string folder) =>
-        new SessionRoots(new ServerConfig { Roots = [folder] }, new Address(), new Adapters.LocalDisk()).Reach(folder).Path!;
+    private static string Real(string folder) => RealPath.Of(folder)!;
 
     private static void Quietly(Action step)
     {

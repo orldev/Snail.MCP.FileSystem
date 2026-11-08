@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Runtime.Versioning;
-using System.Text.Json.Nodes;
 using Snail.MCP.FileSystem.Tests.Support;
 
 namespace Snail.MCP.FileSystem.Tests.Chaos;
@@ -25,10 +24,10 @@ public sealed class WalkChaosTests
         elsewhere.Write("id_rsa", "PRIVATE KEY of somebody else");
         Directory.CreateSymbolicLink(Path.Combine(copy.Root, "vendor"), elsewhere.Root);
 
-        Answer answer = copy.Files.Search("PRIVATE KEY", null, null);
+        Answer<JsonObject> answer = copy.Files.Search("PRIVATE KEY", null, null);
 
         Assert.False(copy.Files.Read("vendor/id_rsa", null, null).IsSuccess);
-        Assert.DoesNotContain("somebody else", answer.Data!.ToJsonString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("somebody else", answer.Value!.ToJsonString(), StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -42,7 +41,7 @@ public sealed class WalkChaosTests
         copy.Write("src/App.cs", "");
         Directory.CreateSymbolicLink(Path.Combine(copy.Root, "src", "loop"), Path.Combine(copy.Root, "src"));
 
-        JsonArray files = copy.Files.Find("App.cs", null).Data!["files"]!.AsArray();
+        JsonArray files = copy.Files.Find("App.cs", null).Value!["files"]!.AsArray();
 
         Assert.Single(files);
     }
@@ -55,10 +54,10 @@ public sealed class WalkChaosTests
         copy.Write("App.cs", "var needle = 1;");
         File.CreateSymbolicLink(Path.Combine(copy.Root, "gone.cs"), Path.Combine(copy.Root, "deleted.cs"));
 
-        Answer answer = copy.Files.Search("needle", null, null);
+        Answer<JsonObject> answer = copy.Files.Search("needle", null, null);
 
         Assert.True(answer.IsSuccess);
-        Assert.Single(answer.Data!["matches"]!.AsArray());
+        Assert.Single(answer.Value!["matches"]!.AsArray());
     }
 
     /// <summary>
@@ -77,7 +76,7 @@ public sealed class WalkChaosTests
 
         try
         {
-            Answer answer = copy.Files.Search("needle", null, null);
+            Answer<JsonObject> answer = copy.Files.Search("needle", null, null);
 
             Assert.True(answer.IsSuccess);
         }
@@ -102,7 +101,7 @@ public sealed class WalkChaosTests
             await made.WaitForExitAsync();
         }
 
-        Task<Answer> search = Task.Run(() => copy.Files.Search("needle", null, null));
+        Task<Answer<JsonObject>> search = Task.Run(() => copy.Files.Search("needle", null, null));
         Task first = await Task.WhenAny(search, Task.Delay(TimeSpan.FromSeconds(5)));
 
         if (first != search)
@@ -128,7 +127,7 @@ public sealed class WalkChaosTests
             await made.WaitForExitAsync();
         }
 
-        Task<Answer> read = Task.Run(() => copy.Files.Read("events.pipe", null, null));
+        Task<Answer<JsonObject>> read = Task.Run(() => copy.Files.Read("events.pipe", null, null));
         Task first = await Task.WhenAny(read, Task.Delay(TimeSpan.FromSeconds(5)));
 
         if (first != read)
@@ -149,7 +148,7 @@ public sealed class WalkChaosTests
     {
         using var copy = new Copy();
 
-        Answer answer = copy.Files.Write(".", "text");
+        Answer<JsonObject> answer = copy.Files.Write(".", "text");
 
         Assert.False(answer.IsSuccess);
     }
@@ -162,7 +161,7 @@ public sealed class WalkChaosTests
         string loop = Path.Combine(copy.Root, "loop");
         File.CreateSymbolicLink(loop, loop);
 
-        Answer answer = copy.Files.Read("loop", null, null);
+        Answer<JsonObject> answer = copy.Files.Read("loop", null, null);
 
         Assert.False(answer.IsSuccess);
     }
@@ -181,7 +180,7 @@ public sealed class WalkChaosTests
             copy.Write($"src/Type{file}.cs", $"var needle = {file};");
         }
 
-        var answers = new Answer[256];
+        var answers = new Answer<JsonObject>[256];
 
         Parallel.For(0, answers.Length, at => answers[at] = (at % 4) switch
         {

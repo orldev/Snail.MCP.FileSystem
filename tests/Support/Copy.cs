@@ -5,7 +5,7 @@ namespace Snail.MCP.FileSystem.Tests.Support;
 /// <summary>A working copy on disk, with the server pointed at it the way a session points it.</summary>
 public sealed class Copy : IDisposable
 {
-    /// <summary>A copy in a new temporary folder, read and written through <paramref name="disk"/>, the machine's own by default.</summary>
+    /// <summary>A copy in a new temporary folder, read, written and reached through <paramref name="disk"/>, the machine's own by default.</summary>
     public Copy(Action<ServerConfig>? tune = null, IWorkingCopy? disk = null)
     {
         Root = TestFolder.Create();
@@ -14,7 +14,7 @@ public sealed class Copy : IDisposable
         ServerConfigExtensions.Normalize(Config);
 
         Disk = disk ?? new LocalDisk();
-        Roots = new SessionRoots(Config, new Nowhere(), Disk);
+        Roots = new SessionRoots(SessionAddress.None, Config.Roots, new SessionRootsOptions { Disk = Disk });
         Files = Files.Of(Roots, Config, Disk, Journal);
     }
 
@@ -31,12 +31,12 @@ public sealed class Copy : IDisposable
     /// <summary>The journal of the changes this copy's files went through.</summary>
     public Journal<CopyWriter> Journal { get; } = new();
 
-    /// <summary>The file tools of a session opened at an address, over the machine's own disk.</summary>
+    /// <summary>The file tools of a session opened at an address, over the machine's own disk, its roots reached on the same disk.</summary>
     public static Files At(ServerConfig config, ISessionAddress address)
     {
         var disk = new LocalDisk();
 
-        return Files.Of(new SessionRoots(config, address, disk), config, disk);
+        return Files.Of(new SessionRoots(address, config.Roots, new SessionRootsOptions { Disk = disk }), config, disk);
     }
 
     /// <summary>Puts a file in the copy and answers with its full path.</summary>
@@ -51,17 +51,11 @@ public sealed class Copy : IDisposable
     }
 
     public void Dispose() => Directory.Delete(Root, recursive: true);
-
-    /// <summary>A session with no address: the configured roots stand, as for a server started as a program.</summary>
-    private sealed class Nowhere : ISessionAddress
-    {
-        public IReadOnlyList<string> Values(string parameter) => [];
-    }
 }
 
 /// <summary>A session opened at an address that names its own roots.</summary>
-public sealed class Address(params string[] roots) : ISessionAddress
+public static class Address
 {
-    public IReadOnlyList<string> Values(string parameter) =>
-        parameter == SessionRoots.Parameter ? roots : [];
+    /// <summary>The address <c>?root=…&amp;root=…</c>; with no root, an address that names none.</summary>
+    public static FixedAddress Of(params string[] roots) => new([.. roots.Select(root => (SessionRoots.Parameter, root))]);
 }

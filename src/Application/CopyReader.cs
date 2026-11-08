@@ -6,26 +6,23 @@ namespace Snail.MCP.FileSystem.Application;
 public sealed class CopyReader(SessionRoots roots, ServerConfig config, IWorkingCopy disk)
 {
     /// <summary>The text of a file, whole or by lines, with what was cut named.</summary>
-    public Answer Read(string? path, int? from, int? to, CancellationToken cancellationToken = default) =>
+    public Answer<JsonObject> Read(string? path, int? from, int? to, CancellationToken cancellationToken = default) =>
         DiskRefusals.Guarded(path, () => Reading(path, from, to, cancellationToken));
 
-    private Answer Reading(string? path, int? from, int? to, CancellationToken cancellationToken)
+    private Answer<JsonObject> Reading(string? path, int? from, int? to, CancellationToken cancellationToken)
     {
-        if (roots.Reach(path) is not { IsAllowed: true } reached)
-        {
-            return roots.Refusal(path);
-        }
+        Reached reached = roots.Reach(path, PathKind.File);
 
-        if (!disk.IsFile(reached.Path!))
+        if (!reached.IsAllowed)
         {
-            return Answer.Failed($"'{roots.Relative(reached.Path!)}' is not a file", "call list_directory to see what is there");
+            return reached.As<JsonObject>();
         }
 
         bool isWhole = from is null && to is null;
 
         if (isWhole && disk.Length(reached.Path!) > config.MaxFileBytes)
         {
-            return Answer.Failed($"'{roots.Relative(reached.Path!)}' is larger than {config.MaxFileBytes} bytes", "read it by lines with from and to");
+            return Answer.Failed<JsonObject>($"'{roots.Relative(reached.Path!)}' is larger than {config.MaxFileBytes} bytes", "read it by lines with from and to");
         }
 
         int first = Math.Max(1, from ?? 1);
