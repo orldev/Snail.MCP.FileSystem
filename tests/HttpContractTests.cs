@@ -92,6 +92,22 @@ public sealed class HttpContractTests : IAsyncLifetime
         Assert.False(File.Exists(Path.Combine(Mine, "b.txt")));
     }
 
+    /// <summary>
+    /// A parameter read_file does not take — offset where it takes from — was dropped without a word and the whole file
+    /// came back; now the call is refused naming it, before the tool runs.
+    /// </summary>
+    [Fact]
+    public async Task ReadFile_ParameterItDoesNotTake_IsRefusedNamingIt()
+    {
+        await using McpClient client = await _server.SessionAsync(Root(Mine));
+
+        CallToolResult answer = await client.CallToolAsync("read_file", new Dictionary<string, object?> { ["path"] = "own.txt", ["offset"] = 2 });
+
+        Assert.True(answer.IsError);
+        Assert.Equal("arguments", answer.Type());
+        Assert.Contains("offset", answer.Error(), StringComparison.Ordinal);
+    }
+
     /// <summary>A copy this machine lacks, or a folder outside the volume, is turned away at the door, before any session.</summary>
     [Theory]
     [InlineData("missing")]

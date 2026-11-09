@@ -25,7 +25,7 @@ public sealed class CopyWriter(SessionRoots roots, ServerConfig config, IWorking
     {
         if (!config.AllowWrite)
         {
-            return Answer.Failed<JsonObject>("this server was started read-only", "a role that writes needs a server with writing turned on");
+            return Answer.Failed("this server was started read-only", "a role that writes needs a server with writing turned on");
         }
 
         Reached reached = roots.Reach(path);
@@ -35,28 +35,28 @@ public sealed class CopyWriter(SessionRoots roots, ServerConfig config, IWorking
             return reached.As<JsonObject>();
         }
 
-        if (disk.IsFolder(reached.Path!))
+        if (disk.IsFolder(reached.Path))
         {
-            return Answer.Failed<JsonObject>($"'{roots.Relative(reached.Path!)}' is a folder", "name a file inside it");
+            return Answer.Failed($"'{roots.Relative(reached.Path)}' is a folder", "name a file inside it");
         }
 
-        disk.MakeFolder(Path.GetDirectoryName(reached.Path!)!);
+        disk.MakeFolder(Path.GetDirectoryName(reached.Path)!);
 
-        bool existed = disk.IsFile(reached.Path!);
+        bool existed = disk.IsFile(reached.Path);
         byte[] bytes = Strict.GetBytes(text ?? string.Empty);
 
-        lock (Stripe(reached.Path!))
+        lock (Stripe(reached.Path))
         {
-            disk.Replace(reached.Path!, bytes);
+            disk.Replace(reached.Path, bytes);
         }
 
-        Log.Wrote(journal, reached.Path!, bytes.Length, existed ? "replaced" : "created");
+        Log.Wrote(journal, reached.Path, bytes.Length, existed ? "replaced" : "created");
 
         return Answer.Ok(new JsonObject
         {
-            ["path"] = roots.Relative(reached.Path!),
+            ["path"] = roots.Relative(reached.Path),
             ["isCreated"] = !existed,
-            ["bytes"] = disk.Length(reached.Path!)
+            ["bytes"] = disk.Length(reached.Path)
         });
     }
 
@@ -70,12 +70,12 @@ public sealed class CopyWriter(SessionRoots roots, ServerConfig config, IWorking
     {
         if (!config.AllowWrite)
         {
-            return Answer.Failed<JsonObject>("this server was started read-only", "a role that writes needs a server with writing turned on");
+            return Answer.Failed("this server was started read-only", "a role that writes needs a server with writing turned on");
         }
 
         if (string.IsNullOrEmpty(find))
         {
-            return Answer.Failed<JsonObject>("name the text to replace", "edit_file replaces exact text, so give enough of it to be unique");
+            return Answer.Failed("name the text to replace", "edit_file replaces exact text, so give enough of it to be unique");
         }
 
         Reached reached = roots.Reach(path, PathKind.File);
@@ -85,9 +85,9 @@ public sealed class CopyWriter(SessionRoots roots, ServerConfig config, IWorking
             return reached.As<JsonObject>();
         }
 
-        lock (Stripe(reached.Path!))
+        lock (Stripe(reached.Path))
         {
-            return Replaced(reached.Path!, find, replace ?? string.Empty, all);
+            return Replaced(reached.Path, find, replace ?? string.Empty, all);
         }
     }
 
@@ -109,12 +109,12 @@ public sealed class CopyWriter(SessionRoots roots, ServerConfig config, IWorking
 
         if (length == 0)
         {
-            return Answer.Failed<JsonObject>($"'{roots.Relative(path)}' does not contain that text", "the file is empty, or is not a file that holds text");
+            return Answer.Failed($"'{roots.Relative(path)}' does not contain that text", "the file is empty, or is not a file that holds text");
         }
 
         if (length > config.MaxFileBytes)
         {
-            return Answer.Failed<JsonObject>($"'{roots.Relative(path)}' is larger than {config.MaxFileBytes} bytes", "write it whole with write_file, or ask whoever runs the server for a larger MaxFileBytes");
+            return Answer.Failed($"'{roots.Relative(path)}' is larger than {config.MaxFileBytes} bytes", "write it whole with write_file, or ask whoever runs the server for a larger MaxFileBytes");
         }
 
         byte[] bytes = disk.Bytes(path);
@@ -123,14 +123,14 @@ public sealed class CopyWriter(SessionRoots roots, ServerConfig config, IWorking
 
         if (Spelled(before, find) is not { } wanted)
         {
-            return Answer.Failed<JsonObject>($"'{roots.Relative(path)}' does not contain that text", "read the file first; whitespace counts");
+            return Answer.Failed($"'{roots.Relative(path)}' does not contain that text", "read the file first; whitespace counts");
         }
 
         int found = Occurrences(before, wanted);
 
         if (found > 1 && !all)
         {
-            return Answer.Failed<JsonObject>($"that text appears {found} times in '{roots.Relative(path)}'", "give more of it, or pass all to replace every one");
+            return Answer.Failed($"that text appears {found} times in '{roots.Relative(path)}'", "give more of it, or pass all to replace every one");
         }
 
         string with = EndedLike(before, wanted, replace);
@@ -138,7 +138,7 @@ public sealed class CopyWriter(SessionRoots roots, ServerConfig config, IWorking
 
         if (codec.Encode(bytes, after) is not { } written)
         {
-            return Answer.Failed<JsonObject>($"'{roots.Relative(path)}' is not UTF-8, and the replacement holds letters its bytes cannot hold", "keep the replacement to ASCII, or write the file whole with write_file");
+            return Answer.Failed($"'{roots.Relative(path)}' is not UTF-8, and the replacement holds letters its bytes cannot hold", "keep the replacement to ASCII, or write the file whole with write_file");
         }
 
         disk.Replace(path, written);

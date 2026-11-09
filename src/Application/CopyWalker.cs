@@ -29,7 +29,7 @@ public sealed class CopyWalker(SessionRoots roots, ServerConfig config, IWorking
         }
 
         var unread = new List<string>();
-        var entries = Walk(reached.Path!, Math.Clamp(depth, 1, 8), reached.Path!, unread, cancellationToken).Take(config.MaxMatches + 1).ToList();
+        var entries = Walk(reached.Path, Math.Clamp(depth, 1, 8), reached.Path, unread, cancellationToken).Take(config.MaxMatches + 1).ToList();
         IEnumerable<JsonNode> listed = entries.Take(config.MaxMatches).Select(entry => (JsonNode)new JsonObject
         {
             ["path"] = entry.Path,
@@ -39,7 +39,7 @@ public sealed class CopyWalker(SessionRoots roots, ServerConfig config, IWorking
 
         return Answer.Ok(new JsonObject
         {
-            ["path"] = roots.Relative(reached.Path!),
+            ["path"] = roots.Relative(reached.Path),
             ["entries"] = new JsonArray([.. listed]),
             ["isCut"] = entries.Count > config.MaxMatches,
             ["unread"] = Named(unread),
@@ -60,13 +60,13 @@ public sealed class CopyWalker(SessionRoots roots, ServerConfig config, IWorking
 
         if (string.IsNullOrWhiteSpace(pattern))
         {
-            return Answer.Failed<JsonObject>("name the pattern to match", "a pattern is a glob: *.cs, Program.*, **/Tests/*.cs");
+            return Answer.Failed("name the pattern to match", "a pattern is a glob: *.cs, Program.*, **/Tests/*.cs");
         }
 
         var glob = Glob.Of(pattern.Trim());
         var unread = new List<string>();
-        var found = Sources(reached.Path!, reached.Path!, unread, cancellationToken)
-            .Select(file => Path.GetRelativePath(reached.Path!, file))
+        var found = Sources(reached.Path, reached.Path, unread, cancellationToken)
+            .Select(file => Path.GetRelativePath(reached.Path, file))
             .Where(glob.IsMatch)
             .Take(config.MaxMatches + 1)
             .ToList();
@@ -94,26 +94,26 @@ public sealed class CopyWalker(SessionRoots roots, ServerConfig config, IWorking
 
         if (string.IsNullOrWhiteSpace(query))
         {
-            return Answer.Failed<JsonObject>("name the text to search for");
+            return Answer.Failed("name the text to search for");
         }
 
         if (query.Contains('\n', StringComparison.Ordinal))
         {
-            return Answer.Failed<JsonObject>("search_text matches within one line, and this text spans several", "search for one line of it, then read_file around the match");
+            return Answer.Failed("search_text matches within one line, and this text spans several", "search for one line of it, then read_file around the match");
         }
 
         Glob? glob = pattern is { Length: > 0 } given ? Glob.Of(given.Trim()) : null;
         var matches = new List<TextMatch>();
         var unread = new List<string>();
 
-        foreach (string file in Sources(reached.Path!, reached.Path!, unread, cancellationToken))
+        foreach (string file in Sources(reached.Path, reached.Path, unread, cancellationToken))
         {
             if (matches.Count > config.MaxMatches)
             {
                 break;
             }
 
-            string relative = Path.GetRelativePath(reached.Path!, file);
+            string relative = Path.GetRelativePath(reached.Path, file);
 
             if (glob is not null && !glob.IsMatch(relative))
             {

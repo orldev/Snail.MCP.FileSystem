@@ -82,6 +82,7 @@ public static class ServiceCollectionExtensions
                 })
                 .ExplainFailures()
                 .WithSessionGrant()
+                .WithArgumentCheck()
                 .WithSessionRoots(Volumes, options =>
                 {
                     options.RootsSetting = ServerConfigExtensions.RootsSetting;

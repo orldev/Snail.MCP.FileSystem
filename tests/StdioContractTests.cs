@@ -1,5 +1,3 @@
-using System.Diagnostics;
-using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -227,29 +225,16 @@ public sealed class StdioContractTests : IDisposable
     [OutsideAContainerFact]
     public async Task Start_EveryInterfaceOutsideAContainer_StopsNamingTheVariable()
     {
-        (string? command, string[]? arguments) = ServerProgram.Command("Snail.MCP.FileSystem", "SNAIL_FILESYSTEM_SERVER");
-        var start = new ProcessStartInfo(command) { RedirectStandardError = true, RedirectStandardOutput = true, RedirectStandardInput = true };
-
-        foreach (string argument in arguments)
+        var environment = new Dictionary<string, string?>
         {
-            start.ArgumentList.Add(argument);
-        }
+            [$"{ServerConfigExtensions.Prefix}ROOTS__0"] = _root,
+            [$"{ServerConfigExtensions.Prefix}LISTENS_ON_EVERY_INTERFACE"] = "true"
+        };
 
-        start.Environment["HOME"] = ServerProgram.Home;
-        start.Environment[$"{ServerConfigExtensions.Prefix}CONFIG"] = ServerProgram.NoSettingsFile;
-        start.Environment[$"{ServerConfigExtensions.Prefix}ROOTS__0"] = _root;
-        start.Environment[$"{ServerConfigExtensions.Prefix}PORT"] = Ports.Free().ToString(CultureInfo.InvariantCulture);
-        start.Environment[$"{ServerConfigExtensions.Prefix}LISTENS_ON_EVERY_INTERFACE"] = "true";
+        ServerExitedException exited = await Assert.ThrowsAsync<ServerExitedException>(() => HttpServerProgram.StartAsync("Snail.MCP.FileSystem", "SNAIL_FILESYSTEM_SERVER", environment, $"{ServerConfigExtensions.Prefix}PORT"));
+        string stderr = exited.Stderr;
 
-        using Process program = Process.Start(start)!;
-        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        Task<string> said = program.StandardError.ReadToEndAsync(deadline.Token);
-
-        await program.WaitForExitAsync(deadline.Token);
-
-        string stderr = await said;
-
-        Assert.Equal(1, program.ExitCode);
+        Assert.Equal(1, exited.ExitCode);
         Assert.Contains($"{ServerConfigExtensions.Prefix}LISTENS_ON_EVERY_INTERFACE", stderr, StringComparison.Ordinal);
         Assert.DoesNotContain("   at ", stderr, StringComparison.Ordinal);
     }

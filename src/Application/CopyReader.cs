@@ -20,19 +20,19 @@ public sealed class CopyReader(SessionRoots roots, ServerConfig config, IWorking
 
         bool isWhole = from is null && to is null;
 
-        if (isWhole && disk.Length(reached.Path!) > config.MaxFileBytes)
+        if (isWhole && disk.Length(reached.Path) > config.MaxFileBytes)
         {
-            return Answer.Failed<JsonObject>($"'{roots.Relative(reached.Path!)}' is larger than {config.MaxFileBytes} bytes", "read it by lines with from and to");
+            return Answer.Failed($"'{roots.Relative(reached.Path)}' is larger than {config.MaxFileBytes} bytes", "read it by lines with from and to");
         }
 
         int first = Math.Max(1, from ?? 1);
-        var window = LineWindow.Of(disk, reached.Path!, first, to ?? int.MaxValue, config.OutputLimitChars, cancellationToken);
+        var window = LineWindow.Of(disk, reached.Path, first, to ?? int.MaxValue, config.OutputLimitChars, cancellationToken);
         string text = string.Join('\n', window.Taken);
         bool cut = text.Length > config.OutputLimitChars;
 
         return Answer.Ok(new JsonObject
         {
-            ["path"] = roots.Relative(reached.Path!),
+            ["path"] = roots.Relative(reached.Path),
             ["from"] = first,
             ["to"] = Math.Min(window.Lines, to ?? window.Lines),
             ["lines"] = window.Lines,
