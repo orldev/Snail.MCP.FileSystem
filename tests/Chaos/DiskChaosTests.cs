@@ -40,6 +40,21 @@ public sealed class DiskChaosTests
 
         Assert.False(answer.IsSuccess);
         Assert.Contains("timed out", answer.Error, StringComparison.Ordinal);
+        Assert.Equal(Refusals.Unwritable, answer.Type);
+    }
+
+    /// <summary>A share that stops answering while the file is read, after it was reached: the session's <c>unreadable</c>, as at the reaching.</summary>
+    [Fact]
+    public void ReadFile_ShareTimesOutWhileRead_IsUnreadable()
+    {
+        var disk = new FailingDisk { IsFailing = path => path.EndsWith("App.cs", StringComparison.Ordinal) };
+        using var copy = new Copy(disk: disk);
+        copy.Write("App.cs", "var a = 1;");
+
+        Answer<JsonObject> answer = copy.Files.Read("App.cs", 1, 1);
+
+        Assert.False(answer.IsSuccess);
+        Assert.Equal(Reached.Unreadable, answer.Type);
     }
 
     /// <summary>A disk full in the middle of a write leaves the file as it was: the new text is written beside it first.</summary>
@@ -54,6 +69,7 @@ public sealed class DiskChaosTests
 
         Assert.False(answer.IsSuccess);
         Assert.Equal("class Old;", File.ReadAllText(path));
+        Assert.Equal(Refusals.Unwritable, answer.Type);
         Assert.Single(Directory.GetFiles(copy.Root));
     }
 
@@ -134,6 +150,7 @@ public sealed class DiskChaosTests
         Assert.False(answer.IsSuccess);
         Assert.Contains("could not be used", answer.Error, StringComparison.Ordinal);
         Assert.Contains("deleted a moment ago", answer.Error, StringComparison.Ordinal);
+        Assert.Equal(Reached.Absent, answer.Type);
     }
 
     /// <summary>

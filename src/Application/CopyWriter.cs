@@ -1,5 +1,6 @@
 using System.Text;
 using Snail.MCP.FileSystem.Configuration;
+using Snail.Sdk.Mcp.Hosting;
 
 namespace Snail.MCP.FileSystem.Application;
 
@@ -16,16 +17,16 @@ public sealed class CopyWriter(SessionRoots roots, ServerConfig config, IWorking
     private static readonly object[] Stripes = [.. Enumerable.Range(0, 64).Select(_ => new object())];
 
     /// <summary>Writes a file whole, making the folders above it.</summary>
-    public Answer<JsonObject> Write(string? path, string? text) => DiskRefusals.Guarded(path, () => Writing(path, text));
+    public Answer<JsonObject> Write(string? path, string? text) => DiskRefusals.Guarded(path, Refusals.Unwritable, () => Writing(path, text));
 
     /// <summary>Replaces an exact piece of a file, and says how many times it did.</summary>
-    public Answer<JsonObject> Edit(string? path, string? find, string? replace, bool all) => DiskRefusals.Guarded(path, () => Editing(path, find, replace, all));
+    public Answer<JsonObject> Edit(string? path, string? find, string? replace, bool all) => DiskRefusals.Guarded(path, Refusals.Unwritable, () => Editing(path, find, replace, all));
 
     private Answer<JsonObject> Writing(string? path, string? text)
     {
         if (!config.AllowWrite)
         {
-            return Answer.Failed("this server was started read-only", "a role that writes needs a server with writing turned on");
+            return Answer.Failed("this server was started read-only", "a role that writes needs a server with writing turned on", Refusals.ReadOnly);
         }
 
         Reached reached = roots.Reach(path);
@@ -37,7 +38,7 @@ public sealed class CopyWriter(SessionRoots roots, ServerConfig config, IWorking
 
         if (disk.IsFolder(reached.Path))
         {
-            return Answer.Failed($"'{roots.Relative(reached.Path)}' is a folder", "name a file inside it");
+            return Answer.Failed($"'{roots.Relative(reached.Path)}' is a folder", "name a file inside it", Reached.NotAFile);
         }
 
         disk.MakeFolder(Path.GetDirectoryName(reached.Path)!);
@@ -70,12 +71,12 @@ public sealed class CopyWriter(SessionRoots roots, ServerConfig config, IWorking
     {
         if (!config.AllowWrite)
         {
-            return Answer.Failed("this server was started read-only", "a role that writes needs a server with writing turned on");
+            return Answer.Failed("this server was started read-only", "a role that writes needs a server with writing turned on", Refusals.ReadOnly);
         }
 
         if (string.IsNullOrEmpty(find))
         {
-            return Answer.Failed("name the text to replace", "edit_file replaces exact text, so give enough of it to be unique");
+            return Answer.Failed("name the text to replace", "edit_file replaces exact text, so give enough of it to be unique", ToolFailures.Arguments);
         }
 
         Reached reached = roots.Reach(path, PathKind.File);
@@ -109,12 +110,12 @@ public sealed class CopyWriter(SessionRoots roots, ServerConfig config, IWorking
 
         if (length == 0)
         {
-            return Answer.Failed($"'{roots.Relative(path)}' does not contain that text", "the file is empty, or is not a file that holds text");
+            return Answer.Failed($"'{roots.Relative(path)}' does not contain that text", "the file is empty, or is not a file that holds text", Refusals.NoMatch);
         }
 
         if (length > config.MaxFileBytes)
         {
-            return Answer.Failed($"'{roots.Relative(path)}' is larger than {config.MaxFileBytes} bytes", "write it whole with write_file, or ask whoever runs the server for a larger MaxFileBytes");
+            return Answer.Failed($"'{roots.Relative(path)}' is larger than {config.MaxFileBytes} bytes", "write it whole with write_file, or ask whoever runs the server for a larger MaxFileBytes", Refusals.TooLarge);
         }
 
         byte[] bytes = disk.Bytes(path);
@@ -123,14 +124,14 @@ public sealed class CopyWriter(SessionRoots roots, ServerConfig config, IWorking
 
         if (Spelled(before, find) is not { } wanted)
         {
-            return Answer.Failed($"'{roots.Relative(path)}' does not contain that text", "read the file first; whitespace counts");
+            return Answer.Failed($"'{roots.Relative(path)}' does not contain that text", "read the file first; whitespace counts", Refusals.NoMatch);
         }
 
         int found = Occurrences(before, wanted);
 
         if (found > 1 && !all)
         {
-            return Answer.Failed($"that text appears {found} times in '{roots.Relative(path)}'", "give more of it, or pass all to replace every one");
+            return Answer.Failed($"that text appears {found} times in '{roots.Relative(path)}'", "give more of it, or pass all to replace every one", Refusals.Ambiguous);
         }
 
         string with = EndedLike(before, wanted, replace);
@@ -138,7 +139,7 @@ public sealed class CopyWriter(SessionRoots roots, ServerConfig config, IWorking
 
         if (codec.Encode(bytes, after) is not { } written)
         {
-            return Answer.Failed($"'{roots.Relative(path)}' is not UTF-8, and the replacement holds letters its bytes cannot hold", "keep the replacement to ASCII, or write the file whole with write_file");
+            return Answer.Failed($"'{roots.Relative(path)}' is not UTF-8, and the replacement holds letters its bytes cannot hold", "keep the replacement to ASCII, or write the file whole with write_file", Refusals.Unencodable);
         }
 
         disk.Replace(path, written);

@@ -18,7 +18,9 @@ public static class ServerGuidance
         on each other's answers: call run_tools once with them as steps, instead of a round trip each.
 
         Every answer is JSON with an ok flag, and a failed call is also flagged isError. When ok is false,
-        read error and hint and fix the call instead of repeating it; type, where the answer has one, names
-        the kind of failure.
+        read error and hint and fix the call instead of repeating it; type names the kind of failure: outside,
+        absent, notAFile, notAFolder or unreadable for a path, arguments for a call the tool cannot take,
+        noMatch or ambiguous for edit_file's text, tooLarge past the file size limit, readOnly on a server
+        that does not write, unencodable, unwritable, tooComplex for a pattern.
         """;
 }

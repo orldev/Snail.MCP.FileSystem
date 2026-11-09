@@ -134,8 +134,23 @@ A step is `{"tool": "read_file", "arguments": {"path": "src/App.cs"}}`.
 {"ok": false, "error": "…", "hint": "…", "type": "…"}
 ```
 
-A refusal is data: `ok` is false, `error` says what happened, `hint` says what to do about it and `type`, when there is
-one, names the kind (`notGranted` for a tool the session was not given, `arguments` for a call the tool cannot take).
+A refusal is data: `ok` is false, `error` says what happened, `hint` says what to do about it and `type` names the
+kind, a word a program branches on:
+
+| `type` | When |
+|---|---|
+| `notGranted` | a tool the session was not given |
+| `arguments` | a call the tool cannot take: no pattern or text to look for, a search of several lines, half of a character |
+| `noRoot`, `noPath`, `outside`, `unfollowable` | a session with no root, a call with no path, a path or a link leading out of the session's root, a loop of links |
+| `absent`, `notAFile`, `notAFolder` | nothing at the path, or a folder where a file must be and the other way round |
+| `unreadable` | the disk refused a read: a folder the server may not enter, a share that did not answer |
+| `unwritable` | the disk refused a write or an edit: full, a file the server may not change |
+| `readOnly` | `write_file` or `edit_file` on a server started without writing |
+| `tooLarge` | a file past `MaxFileBytes`, read whole or edited |
+| `noMatch`, `ambiguous` | `edit_file`'s text is not in the file, or is there more than once without `all` |
+| `unencodable` | a replacement whose letters the bytes of a file that is not UTF-8 cannot hold |
+| `tooComplex` | a pattern that takes too long to match against a name |
+
 The same shape either way, because a model reads the shape it saw last, and a refusal is flagged `isError` too. The
 envelope is Snail.Sdk's, the same in every server of the fleet; a field with no value is left out.
 

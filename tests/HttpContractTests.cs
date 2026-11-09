@@ -1,6 +1,7 @@
 using System.Net;
 using ModelContextProtocol.Client;
 using ModelContextProtocol.Protocol;
+using Snail.Sdk.Mcp.Hosting;
 
 namespace Snail.MCP.FileSystem.Tests;
 
@@ -104,7 +105,7 @@ public sealed class HttpContractTests : IAsyncLifetime
         CallToolResult answer = await client.CallToolAsync("read_file", new Dictionary<string, object?> { ["path"] = "own.txt", ["offset"] = 2 });
 
         Assert.True(answer.IsError);
-        Assert.Equal("arguments", answer.Type());
+        Assert.Equal(ToolFailures.Arguments, answer.Type());
         Assert.Contains("offset", answer.Error(), StringComparison.Ordinal);
     }
 

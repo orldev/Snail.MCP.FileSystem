@@ -62,24 +62,21 @@ Reads a file as text, whole or by lines. Says how many lines it has and whether 
       "type": [
         "string",
         "null"
-      ],
-      "default": null
+      ]
     },
     "hint": {
-      "description": "What to do about a refusal; present only on one.",
+      "description": "What to do next: about a refusal, or with the data of a success that carries one; absent otherwise.",
       "type": [
         "string",
         "null"
-      ],
-      "default": null
+      ]
     },
     "type": {
       "description": "The kind of refusal, a word a program can branch on; present only on one.",
       "type": [
         "string",
         "null"
-      ],
-      "default": null
+      ]
     },
     "data": {
       "description": "What the tool answers.",
@@ -179,24 +176,21 @@ Writes a file whole, creating the folders above it. Overwrites without asking: r
       "type": [
         "string",
         "null"
-      ],
-      "default": null
+      ]
     },
     "hint": {
-      "description": "What to do about a refusal; present only on one.",
+      "description": "What to do next: about a refusal, or with the data of a success that carries one; absent otherwise.",
       "type": [
         "string",
         "null"
-      ],
-      "default": null
+      ]
     },
     "type": {
       "description": "The kind of refusal, a word a program can branch on; present only on one.",
       "type": [
         "string",
         "null"
-      ],
-      "default": null
+      ]
     },
     "data": {
       "description": "What the tool answers.",
@@ -293,24 +287,21 @@ Replaces exact text in a file; nothing else in it changes, its encoding and line
       "type": [
         "string",
         "null"
-      ],
-      "default": null
+      ]
     },
     "hint": {
-      "description": "What to do about a refusal; present only on one.",
+      "description": "What to do next: about a refusal, or with the data of a success that carries one; absent otherwise.",
       "type": [
         "string",
         "null"
-      ],
-      "default": null
+      ]
     },
     "type": {
       "description": "The kind of refusal, a word a program can branch on; present only on one.",
       "type": [
         "string",
         "null"
-      ],
-      "default": null
+      ]
     },
     "data": {
       "description": "What the tool answers.",
@@ -396,24 +387,21 @@ Lists what is under a folder, to the depth asked for. Build output, .git and lin
       "type": [
         "string",
         "null"
-      ],
-      "default": null
+      ]
     },
     "hint": {
-      "description": "What to do about a refusal; present only on one.",
+      "description": "What to do next: about a refusal, or with the data of a success that carries one; absent otherwise.",
       "type": [
         "string",
         "null"
-      ],
-      "default": null
+      ]
     },
     "type": {
       "description": "The kind of refusal, a word a program can branch on; present only on one.",
       "type": [
         "string",
         "null"
-      ],
-      "default": null
+      ]
     },
     "data": {
       "description": "What the tool answers.",
@@ -538,24 +526,21 @@ Names the files whose path matches a glob: *.cs, **/Tests/*.cs, appsettings.*.js
       "type": [
         "string",
         "null"
-      ],
-      "default": null
+      ]
     },
     "hint": {
-      "description": "What to do about a refusal; present only on one.",
+      "description": "What to do next: about a refusal, or with the data of a success that carries one; absent otherwise.",
       "type": [
         "string",
         "null"
-      ],
-      "default": null
+      ]
     },
     "type": {
       "description": "The kind of refusal, a word a program can branch on; present only on one.",
       "type": [
         "string",
         "null"
-      ],
-      "default": null
+      ]
     },
     "data": {
       "description": "What the tool answers.",
@@ -671,24 +656,21 @@ Names the lines that contain a text, with the file and the line number of each. 
       "type": [
         "string",
         "null"
-      ],
-      "default": null
+      ]
     },
     "hint": {
-      "description": "What to do about a refusal; present only on one.",
+      "description": "What to do next: about a refusal, or with the data of a success that carries one; absent otherwise.",
       "type": [
         "string",
         "null"
-      ],
-      "default": null
+      ]
     },
     "type": {
       "description": "The kind of refusal, a word a program can branch on; present only on one.",
       "type": [
         "string",
         "null"
-      ],
-      "default": null
+      ]
     },
     "data": {
       "description": "What the tool answers.",

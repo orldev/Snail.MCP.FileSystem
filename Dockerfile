@@ -22,9 +22,6 @@
 # start. It is compiled for the platform the image is built for (TARGETARCH: amd64 is linux-x64, arm64 is
 # linux-arm64): ahead-of-time compilation does not cross architectures in the SDK image.
 #
-# Until Snail.Sdk 0.5.0 is released, nuget.config takes the SDK from a local feed this build stage does not have, so the
-# image does not build on this branch; the release maps it back to nuget.org and the restore below takes it from there.
-#
 # VERSION is the release's when the shared mcp-image.yml builds the image (0.0.0-<branch>.<commit> from a branch)
 # and 0.0.0-local otherwise: the server reports it in initialize and the image carries it as its OCI version.
 ARG VERSION=0.0.0-local

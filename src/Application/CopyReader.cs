@@ -7,7 +7,7 @@ public sealed class CopyReader(SessionRoots roots, ServerConfig config, IWorking
 {
     /// <summary>The text of a file, whole or by lines, with what was cut named.</summary>
     public Answer<JsonObject> Read(string? path, int? from, int? to, CancellationToken cancellationToken = default) =>
-        DiskRefusals.Guarded(path, () => Reading(path, from, to, cancellationToken));
+        DiskRefusals.Guarded(path, Reached.Unreadable, () => Reading(path, from, to, cancellationToken));
 
     private Answer<JsonObject> Reading(string? path, int? from, int? to, CancellationToken cancellationToken)
     {
@@ -22,7 +22,7 @@ public sealed class CopyReader(SessionRoots roots, ServerConfig config, IWorking
 
         if (isWhole && disk.Length(reached.Path) > config.MaxFileBytes)
         {
-            return Answer.Failed($"'{roots.Relative(reached.Path)}' is larger than {config.MaxFileBytes} bytes", "read it by lines with from and to");
+            return Answer.Failed($"'{roots.Relative(reached.Path)}' is larger than {config.MaxFileBytes} bytes", "read it by lines with from and to", Refusals.TooLarge);
         }
 
         int first = Math.Max(1, from ?? 1);

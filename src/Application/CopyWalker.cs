@@ -1,4 +1,5 @@
 using Snail.MCP.FileSystem.Configuration;
+using Snail.Sdk.Mcp.Hosting;
 
 namespace Snail.MCP.FileSystem.Application;
 
@@ -7,15 +8,15 @@ public sealed class CopyWalker(SessionRoots roots, ServerConfig config, IWorking
 {
     /// <summary>What lies under a folder, to the depth asked for.</summary>
     public Answer<JsonObject> List(string? path, int depth, CancellationToken cancellationToken = default) =>
-        DiskRefusals.Guarded(path, () => Listing(path, depth, cancellationToken));
+        DiskRefusals.Guarded(path, Reached.Unreadable, () => Listing(path, depth, cancellationToken));
 
     /// <summary>Files whose name matches a pattern.</summary>
     public Answer<JsonObject> Find(string? pattern, string? path, CancellationToken cancellationToken = default) =>
-        DiskRefusals.Guarded(path, () => Finding(pattern, path, cancellationToken));
+        DiskRefusals.Guarded(path, Reached.Unreadable, () => Finding(pattern, path, cancellationToken));
 
     /// <summary>Lines of files that contain a text.</summary>
     public Answer<JsonObject> Search(string? query, string? path, string? pattern, CancellationToken cancellationToken = default) =>
-        DiskRefusals.Guarded(path, () => Searching(query, path, pattern, cancellationToken));
+        DiskRefusals.Guarded(path, Reached.Unreadable, () => Searching(query, path, pattern, cancellationToken));
 
     private Answer<JsonObject> Listing(string? path, int depth, CancellationToken cancellationToken)
     {
@@ -60,7 +61,7 @@ public sealed class CopyWalker(SessionRoots roots, ServerConfig config, IWorking
 
         if (string.IsNullOrWhiteSpace(pattern))
         {
-            return Answer.Failed("name the pattern to match", "a pattern is a glob: *.cs, Program.*, **/Tests/*.cs");
+            return Answer.Failed("name the pattern to match", "a pattern is a glob: *.cs, Program.*, **/Tests/*.cs", ToolFailures.Arguments);
         }
 
         var glob = Glob.Of(pattern.Trim());
@@ -94,12 +95,12 @@ public sealed class CopyWalker(SessionRoots roots, ServerConfig config, IWorking
 
         if (string.IsNullOrWhiteSpace(query))
         {
-            return Answer.Failed("name the text to search for");
+            return Answer.Failed("name the text to search for", type: ToolFailures.Arguments);
         }
 
         if (query.Contains('\n', StringComparison.Ordinal))
         {
-            return Answer.Failed("search_text matches within one line, and this text spans several", "search for one line of it, then read_file around the match");
+            return Answer.Failed("search_text matches within one line, and this text spans several", "search for one line of it, then read_file around the match", ToolFailures.Arguments);
         }
 
         Glob? glob = pattern is { Length: > 0 } given ? Glob.Of(given.Trim()) : null;

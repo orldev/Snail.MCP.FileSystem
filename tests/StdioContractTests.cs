@@ -186,6 +186,25 @@ public sealed class StdioContractTests : IDisposable
         Assert.Equal(2, stopped.Data()!["ran"]!.GetValue<int>());
     }
 
+    /// <summary>A refusal of the server's own names its kind at the top of the envelope, the word a program branches on, as the program answers it.</summary>
+    [Fact]
+    public async Task Refusals_OverStdio_CarryTheirType()
+    {
+        await File.WriteAllTextAsync(Path.Combine(_root, "notes.md"), "log(); log();\n");
+        Directory.CreateDirectory(Path.Combine(_root, "src"));
+        await using McpClient client = await StartedAsync();
+
+        CallToolResult absent = await client.CallToolAsync("edit_file", new Dictionary<string, object?> { ["path"] = "notes.md", ["find"] = "trace()", ["replace"] = "x" });
+        CallToolResult twice = await client.CallToolAsync("edit_file", new Dictionary<string, object?> { ["path"] = "notes.md", ["find"] = "log()", ["replace"] = "x" });
+        CallToolResult folder = await client.CallToolAsync("write_file", new Dictionary<string, object?> { ["path"] = "src", ["text"] = "x" });
+        CallToolResult lines = await client.CallToolAsync("search_text", new Dictionary<string, object?> { ["query"] = "one\ntwo" });
+
+        Assert.Equal("noMatch", absent.Type());
+        Assert.Equal("ambiguous", twice.Type());
+        Assert.Equal(Reached.NotAFile, folder.Type());
+        Assert.Equal(ToolFailures.Arguments, lines.Type());
+    }
+
     /// <summary>The type a tool's output schema is made from, as its attribute names it.</summary>
     private static Type SchemaOf(string tool) =>
         typeof(FileTools).Assembly.GetTypes()
