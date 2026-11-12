@@ -268,12 +268,12 @@ public sealed class StdioContractTests : IDisposable
             [$"{ServerConfigExtensions.Prefix}STEP_LIMIT"] = "0"
         };
 
-        ServerExitedException exited = await Assert.ThrowsAsync<ServerExitedException>(() => ServerProgram.StartAsync("Snail.MCP.FileSystem", "SNAIL_FILESYSTEM_SERVER", environment));
+        (int exitCode, string stderr) = await RefusedStart.RunAsync(environment);
 
-        Assert.Equal(1, exited.ExitCode);
+        Assert.Equal(1, exitCode);
         Assert.Equal(
             $"{ServerConfigExtensions.Prefix}STEP_LIMIT (or StepLimit in the settings file) is '0'; it is a number of steps above zero.",
-            exited.Stderr.Trim());
+            stderr.Trim());
     }
 
     /// <summary>
@@ -289,10 +289,10 @@ public sealed class StdioContractTests : IDisposable
             [$"{ServerConfigExtensions.Prefix}STEP_LIMIT"] = "abc"
         };
 
-        ServerExitedException exited = await Assert.ThrowsAsync<ServerExitedException>(() => ServerProgram.StartAsync("Snail.MCP.FileSystem", "SNAIL_FILESYSTEM_SERVER", environment));
-        string stderr = exited.Stderr.Trim();
+        (int exitCode, string output) = await RefusedStart.RunAsync(environment);
+        string stderr = output.Trim();
 
-        Assert.Equal(1, exited.ExitCode);
+        Assert.Equal(1, exitCode);
         Assert.Contains($"{ServerConfigExtensions.Prefix}STEP_LIMIT", stderr, StringComparison.Ordinal);
         Assert.DoesNotContain('\n', stderr);
         Assert.DoesNotContain("   at ", stderr, StringComparison.Ordinal);
