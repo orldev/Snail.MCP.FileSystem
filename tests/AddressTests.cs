@@ -69,7 +69,7 @@ public sealed class AddressTests
     /// A root inside a folder the server may not enter may well be there: taken for missing, the session was told "this
     /// machine has no" copy it had right, and went to look for another host. The door now says the server may not read it.
     /// </summary>
-    [Fact]
+    [NotAsRootFact]
     [UnsupportedOSPlatform("windows")]
     public async Task Session_OpenedAtARootTheServerMayNotRead_IsRefusedSayingSo()
     {
@@ -98,7 +98,7 @@ public sealed class AddressTests
     }
 
     /// <summary>The server reaches a path on its own disk: a file in a folder it may not enter is answered <c>unreadable</c>, not absent.</summary>
-    [Fact]
+    [NotAsRootFact]
     [UnsupportedOSPlatform("windows")]
     public async Task Call_FileInAFolderTheServerMayNotEnter_IsUnreadable()
     {

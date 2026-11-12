@@ -157,7 +157,7 @@ public sealed class DiskChaosTests
     /// A file in a folder the process may not enter is there: <c>File.Exists</c> answered false for it, and the model was
     /// told "there is no file" and went looking for a name it had right.
     /// </summary>
-    [Fact]
+    [NotAsRootFact]
     [UnsupportedOSPlatform("windows")]
     public void ReadFile_InAFolderThatMayNotBeEntered_IsUnreadableNotAbsent()
     {
